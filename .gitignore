@@ -1,0 +1,12 @@
+# IntelliJ IDEA local tracking settings
+.idea/
+*.iml
+out/
+gen/
+
+# Compiled Java class binaries (never upload these to GitHub)
+*.class
+
+# Your local backtester simulation output datasets
+*.csv
+
