@@ -13,18 +13,18 @@ import java.util.concurrent.Future;
 public final class Main {
 
     public static void main(String[] args) {
-        // 1. Define Global Simulation Parameters
-        int simulationRuns = 1000;           // Number of parallel timeline tests (one per task)
-        int handsPerRun = 100_000;         // Depth of each historical timeline test
-        int totalDecks = 6;                // Standard casino shoe depth
+        // 1. Simulation parameters
+        int simulationRuns = 1000;           // Number of simulation runs
+        int handsPerRun = 100_000;         // Hands per run
+        int totalDecks = 6;                // Decks in the shoe
 
-        double startingBankroll = 100000; // Your seed capital
-        double tableMin = 100;             // Table minimum bet limits
-        double tableMax = 10000.0;           // Table maximum bet limits
+        double startingBankroll = 15000; // Starting bankroll
+        double tableMin = 100;             // Table minimum bet
+        double tableMax = 10000.0;           // Table maximum bet
 
         String outputFilePath = "quant_blackjack_results.csv";
 
-        // 2. Dynamically Scale Resources to the Host Hardware
+        // 2. Set up thread pool
         int availableCores = Runtime.getRuntime().availableProcessors();
         System.out.println("System Hardware Detected: " + availableCores + " physical cores available.");
         System.out.println("Allocating Fixed Thread Pool...");
@@ -32,7 +32,7 @@ public final class Main {
         ExecutorService threadPool = Executors.newFixedThreadPool(availableCores);
         List<SimulationWorker> tasks = new ArrayList<>();
 
-        // 3. Queue Up the Parallel Timelines
+        // 3. Create simulation tasks
         for (int i = 0; i < simulationRuns; i++) {
             tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax));
         }
@@ -44,28 +44,28 @@ public final class Main {
         long startTime = System.currentTimeMillis();
 
         try {
-            // 4. Fire the threads simultaneously across all CPU cores
+            // 4. Run all simulations in parallel
             List<Future<SimulationResult>> futures = threadPool.invokeAll(tasks);
 
-            // 5. Gather and block-collate the results as they finish processing
+            // 5. Collect results
             for (Future<SimulationResult> future : futures) {
-                globalResults.add(future.get()); // Blocks safely until individual thread concludes
+                globalResults.add(future.get());
             }
 
         } catch (Exception e) {
-            System.err.println("[Thread Pool Failure] Execution crash: " + e.getMessage());
+            System.err.println("Simulation failed: " + e.getMessage());
         } finally {
-            // Always shut down the thread pool to release OS hardware resources
+            // Shut down the thread pool
             threadPool.shutdown();
         }
 
         long endTime = System.currentTimeMillis();
         System.out.println("Computation complete! Processing execution time: " + (endTime - startTime) + "ms");
 
-        // 6. Push Datasets to External Spreadsheet File Engine
+        // 6. Export results to CSV
         DataExporter.exportToCSV(outputFilePath, globalResults);
 
-        // 7. Generate Real-Time High-Level Analytics Console Report
+        // 7. Print summary report
         printConsoleSummaryReport(globalResults, startingBankroll, tableMin, tableMax, handsPerRun);
     }
 
@@ -99,12 +99,12 @@ public final class Main {
         double averageHandsPlayed = (double) totalHandsPlayed / activeRuns;
         double evPerHand = aggregatePnL / totalHandsPlayed;
 
-        System.out.println("\n============== RISK AUDIT SYSTEM EXECUTIVE REPORT ==============");
-        System.out.println("Total Simulated Timelines : " + activeRuns);
-        System.out.println("Average Expected Net P&L  : $" + String.format("%.2f", averagePnL));
-        System.out.println("Worst-Case Absolute MDD   : $" + String.format("%.2f", aggregateMaxDrawdown));
-        System.out.println("Calculated Risk of Ruin   : " + String.format("%.2f", riskOfRuin) + "%");
-        System.out.println("================================================================");
+        System.out.println("\n============== SIMULATION SUMMARY ==============");
+        System.out.println("Total Runs              : " + activeRuns);
+        System.out.println("Average Net P&L         : $" + String.format("%.2f", averagePnL));
+        System.out.println("Worst-Case Max Drawdown : $" + String.format("%.2f", aggregateMaxDrawdown));
+        System.out.println("Risk of Ruin            : " + String.format("%.2f", riskOfRuin) + "%");
+        System.out.println("=================================================");
 
         // Expected Value Summary by Rounds Per Hour
         int[] roundsPerHourOptions = {50, 60, 70, 80, 100, 120, 150, 200};

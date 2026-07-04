@@ -219,10 +219,9 @@ public final class GameEngine {
         int dealerUpcard = dealerHand[0];
         int dealerTotal = calculateHandValue(dealerHand, dealerCardCount);
 
-        // 1. --- EXTENSION: INSURANCE PROTOCOL ---
-        // If dealer upcard is an Ace (value 11), evaluate insurance entry point
+        // 1. Insurance check (dealer shows Ace)
         if (dealerUpcard == 11 && currentBankroll >= (baselineWager * 1.5)) {
-            boolean takeInsurance = evaluateInsuranceMatrix(shoe.getTrueCount()); // Quant matrix logic
+            boolean takeInsurance = evaluateInsuranceMatrix(shoe.getTrueCount());
             if (takeInsurance) {
                 double insuranceBet = baselineWager * 0.5;
                 if (dealerTotal == 21) {
@@ -240,16 +239,14 @@ public final class GameEngine {
             return resolveNaturalBlackjacks(playerInitialBJ, dealerBJ, baselineWager);
         }
 
-        // 2. --- EXTENSION: SURRENDER PROTOCOL ---
-        // Evaluated immediately on the initial 2-card hand
+        // 2. Surrender check (initial 2-card hand only)
         if (evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
             playerHandSurrendered[0] = true;
             currentBankroll -= (baselineWager * 0.5);
             return -(baselineWager * 0.5);
         }
 
-        // 3. --- EXTENSION: DYNAMIC SPLITTING & GAMEPLAY LOOP ---
-        // We use a simple pointer tracking index to handle hands sequentially, including newly generated split hands
+        // 3. Splitting and play loop
         for (int h = 0; h < activePlayerHandsCount; h++) {
 
             // Check for recursive split triggers (e.g., pairs) up to a max table limit of 4 hands
@@ -259,28 +256,28 @@ public final class GameEngine {
                     // Track if we are splitting Aces
                     boolean splittingAces = (playerHands[h][0] == 11);
 
-                    // Isolate the matching card and push it to a brand new hand index
+                    // Move second card to a new hand
                     int newHandIdx = activePlayerHandsCount;
                     playerHands[newHandIdx][0] = playerHands[h][1]; // Move 2nd card to new hand
                     playerHandCardCounts[newHandIdx] = 1;
-                    playerHandWagers[newHandIdx] = playerHandWagers[h]; // Match original wager size
+                    playerHandWagers[newHandIdx] = playerHandWagers[h];
 
-                    // Truncate original hand back to 1 card
+                    // Reset original hand to 1 card
                     playerHandCardCounts[h] = 1;
 
-                    // Mark both hands as originating from split Aces (no further hitting allowed)
+                    // Split Aces get one card each, no further hitting
                     if (splittingAces) {
                         playerHandFromSplitAces[h] = true;
                         playerHandFromSplitAces[newHandIdx] = true;
                     }
 
-                    // Immediately hit both newly separated hands to bring them back up to 2 cards
+                    // Deal one card to each split hand
                     playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
                     playerHands[newHandIdx][playerHandCardCounts[newHandIdx]++] = shoe.dealCard().getValue();
 
-                    activePlayerHandsCount++; // Increment global hand scope pointer
+                    activePlayerHandsCount++;
                 } else {
-                    break; // Matrix says don't split, continue to standard decision flow
+                    break;
                 }
             }
 
@@ -293,23 +290,23 @@ public final class GameEngine {
                 continue;
             }
 
-            // Execute standard tactical decision loop for current active hand 'h'
+            // Play out the hand (hit/stand/double loop)
             boolean handActive = true;
             while (handActive) {
                 int currentTotal = calculateHandValue(playerHands[h], playerHandCardCounts[h]);
                 if (currentTotal >= 21) break;
 
-                // Query your localized choice index array
+                // Look up the correct play
                 Decision decision = evaluateMainMatrix(playerHands[h], playerHandCardCounts[h], dealerUpcard, shoe.getTrueCount());
 
                 switch (decision) {
                     case DOUBLE:
                         if (playerHandCardCounts[h] == 2 && currentBankroll >= playerHandWagers[h]) {
-                            playerHandWagers[h] *= 2.0; // Double down wager profile
+                            playerHandWagers[h] *= 2.0;
                             playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
-                            handActive = false; // Forced single card ceiling limit on doubles
+                            handActive = false; // Only one card on a double
                         } else {
-                            // Fallback to HIT if bankroll constraints or rule states deny double down
+                            // Can't double — hit instead
                             playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
                         }
                         break;
@@ -332,8 +329,7 @@ public final class GameEngine {
             }
         }
 
-        // 4. --- DEALER EXECUTION ENGINE ---
-        // The dealer only hits if at least one player split profile survived the initial rounds without busting/surrendering
+        // 4. Dealer plays (only if at least one player hand is still live)
         boolean dealerMustPlay = false;
         for (int h = 0; h < activePlayerHandsCount; h++) {
             if (!playerHandBusted[h] && !playerHandSurrendered[h]) {
@@ -355,7 +351,7 @@ public final class GameEngine {
             }
         }
 
-        // 5. --- MULTI-HAND CAPITAL DISBURSEMENT SYSTEM ---
+        // 5. Settle all hands
         double totalRoundPnL = 0.0;
         for (int h = 0; h < activePlayerHandsCount; h++) {
             if (playerHandSurrendered[h]) {
@@ -381,13 +377,10 @@ public final class GameEngine {
         return totalRoundPnL;
     }
 
-    // --- ENUM FOR MATRIX MAPPING INTEGRATION ---
     public enum Decision {HIT, STAND, DOUBLE}
 
-    // --- MATRIX PLUG-IN HOOK METHODS ---
-    // Plug your precise 2D multidimensional decision arrays right into these evaluation filters!
     private boolean evaluateInsuranceMatrix(double trueCount) {
-        return trueCount >= 3.0; // Statistical baseline: Insurance is mathematically viable at True +3
+        return trueCount >= 3.0; // Insurance is +EV at true count >= +3
     }
 
     /**

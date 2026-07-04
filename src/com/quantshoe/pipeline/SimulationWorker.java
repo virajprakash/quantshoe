@@ -23,7 +23,7 @@ public final class SimulationWorker implements Callable<SimulationResult> {
         this.tableMin = tableMin;
         this.tableMax = tableMax;
 
-        // Instantiating these inside the thread constructor ensures each thread owns its distinct data structures
+        // Each worker gets its own engine and betting state (thread-safe by isolation)
         this.engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax);
         this.bettingEngine = new KellyBettingEngine();
     }
@@ -35,34 +35,34 @@ public final class SimulationWorker implements Callable<SimulationResult> {
         int activeHands = 0;
 
         for (int i = 0; i < handsToSimulate; i++) {
-            // 1. Fetch current game state variables
+            // 1. Get current state
             double currentBankroll = engine.getCurrentBankroll();
             Shoe activeShoe = engine.getShoe();
 
-            // Risk management safety check: terminate early if we experience ruin (bust)
+            // Stop if bankroll is too low to continue
             if (currentBankroll <= tableMin) {
                 break;
             }
 
-            // 2. Structural casino rule check: Shuffle if we hit the deck depth limit (e.g., 75% penetration)
+            // 2. Reshuffle at 75% penetration
             if (activeShoe.getCardsRemaining() < (totalDecks * 52 * 0.25)) {
                 activeShoe.shuffle();
             }
 
-            // 3. Query the risk engine to size our wager based on current True Count
+            // 3. Size the bet using Kelly criterion
             double trueCount = activeShoe.getTrueCount();
             double wager = bettingEngine.calculateOptimalWager(trueCount, currentBankroll);
 
-            // If count is negative/neutral, Kelly tells us to bet $0. We place table minimum to keep playing.
+            // Negative/neutral count = no edge, so bet the minimum
             if (wager < tableMin) {
                 wager = tableMin;
             }
 
-            // 4. Execute the mathematical gameplay logic
+            // 4. Play the hand
             engine.playRound(wager);
             activeHands++;
 
-            // 5. Variance Tracking: Calculate Drawdown Metrics
+            // 5. Track drawdown
             double updatedBankroll = engine.getCurrentBankroll();
             if (updatedBankroll > peakBankroll) {
                 peakBankroll = updatedBankroll;
@@ -74,7 +74,7 @@ public final class SimulationWorker implements Callable<SimulationResult> {
             }
         }
 
-        // Package up the final metrics to return to the Main orchestrator thread
+        // Return results
         double finalCap = engine.getCurrentBankroll();
         double netPnL = finalCap - startingBankroll;
 

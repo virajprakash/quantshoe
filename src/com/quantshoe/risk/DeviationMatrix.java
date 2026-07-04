@@ -58,8 +58,9 @@ public final class DeviationMatrix {
         // Illustrious 18 - Hard 13 vs Dealer 3: Stand if TC >= -2
         DEVIATION_THRESHOLDS[13][3] = -2.0;
 
-        // Illustrious 18 - Hard 10 vs Dealer 10: Double if TC >= 4
+        // Illustrious 18 - Hard 10 vs Dealer 10: Double if TC >= 4, Hard 10 vs Dealer Ace: Double if TC >= 3
         DEVIATION_THRESHOLDS[10][10] = 4.0;
+        DEVIATION_THRESHOLDS[10][11] = 3.0;
 
         // Illustrious 18 - Hard 9 vs Dealer 2: Double if TC >= 1
         DEVIATION_THRESHOLDS[9][2] = 1.0;
