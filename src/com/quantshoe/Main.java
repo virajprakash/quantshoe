@@ -2,6 +2,7 @@ package com.quantshoe;
 import com.quantshoe.pipeline.DataExporter;
 import com.quantshoe.pipeline.SimulationResult;
 import com.quantshoe.pipeline.SimulationWorker;
+import com.quantshoe.risk.KellyBettingEngine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,13 +14,13 @@ public final class Main {
 
     public static void main(String[] args) {
         // 1. Define Global Simulation Parameters
-        int simulationRuns = 100;           // Number of parallel timeline tests (one per task)
+        int simulationRuns = 1000;           // Number of parallel timeline tests (one per task)
         int handsPerRun = 100_000;         // Depth of each historical timeline test
         int totalDecks = 6;                // Standard casino shoe depth
 
-        double startingBankroll = 15000; // Your seed capital
-        double tableMin = 25;             // Table minimum bet limits
-        double tableMax = 1000.0;           // Table maximum bet limits
+        double startingBankroll = 100000; // Your seed capital
+        double tableMin = 100;             // Table minimum bet limits
+        double tableMax = 10000.0;           // Table maximum bet limits
 
         String outputFilePath = "quant_blackjack_results.csv";
 
@@ -65,13 +66,13 @@ public final class Main {
         DataExporter.exportToCSV(outputFilePath, globalResults);
 
         // 7. Generate Real-Time High-Level Analytics Console Report
-        printConsoleSummaryReport(globalResults, startingBankroll, tableMin, handsPerRun);
+        printConsoleSummaryReport(globalResults, startingBankroll, tableMin, tableMax, handsPerRun);
     }
 
     /**
      * Aggregates multi-threaded datasets into single performance metrics.
      */
-    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap, double tableMin, int handsPerRun) {
+    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap, double tableMin, double tableMax, int handsPerRun) {
         double aggregatePnL = 0.0;
         double aggregateMaxDrawdown = 0.0;
         int activeRuns = results.size();
@@ -124,5 +125,22 @@ public final class Main {
                     String.format("%.1f", sessionsPerThread)));
         }
         System.out.println("===============================================================================================");
+
+        // Bet Spread Summary
+        KellyBettingEngine kellyEngine = new KellyBettingEngine();
+        System.out.println("\n=================== BET SPREAD (Starting Bankroll) ===================");
+        System.out.println(String.format("%-18s %-18s", "True Count", "Wager"));
+        System.out.println("--------------------------------------");
+        for (int tc = -5; tc <= 10; tc++) {
+            double rawWager = kellyEngine.calculateOptimalWager(tc, initialCap);
+            double effectiveWager = Math.max(tableMin, Math.min(rawWager, tableMax));
+            if (rawWager < tableMin) {
+                effectiveWager = tableMin;
+            }
+            System.out.println(String.format("%-18s $%-17s",
+                    (tc >= 0 ? "+" : "") + tc,
+                    String.format("%.0f", effectiveWager)));
+        }
+        System.out.println("======================================================================");
     }
 }
