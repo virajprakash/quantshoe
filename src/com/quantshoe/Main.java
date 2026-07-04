@@ -17,8 +17,8 @@ public final class Main {
         int handsPerRun = 100_000;         // Depth of each historical timeline test
         int totalDecks = 6;                // Standard casino shoe depth
 
-        double startingBankroll = 10_000.0; // Your seed capital
-        double tableMin = 10.0;             // Table minimum bet limits
+        double startingBankroll = 15000; // Your seed capital
+        double tableMin = 25;             // Table minimum bet limits
         double tableMax = 1000.0;           // Table maximum bet limits
 
         String outputFilePath = "quant_blackjack_results.csv";
@@ -65,26 +65,28 @@ public final class Main {
         DataExporter.exportToCSV(outputFilePath, globalResults);
 
         // 7. Generate Real-Time High-Level Analytics Console Report
-        printConsoleSummaryReport(globalResults, startingBankroll);
+        printConsoleSummaryReport(globalResults, startingBankroll, tableMin, handsPerRun);
     }
 
     /**
      * Aggregates multi-threaded datasets into single performance metrics.
      */
-    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap) {
+    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap, double tableMin, int handsPerRun) {
         double aggregatePnL = 0.0;
         double aggregateMaxDrawdown = 0.0;
         int activeRuns = results.size();
         int bankruptcyCount = 0;
+        long totalHandsPlayed = 0;
 
         for (SimulationResult res : results) {
             aggregatePnL += res.getNetProfit();
+            totalHandsPlayed += res.getTotalHandsPlayed();
 
             if (res.getMaxDrawdown() > aggregateMaxDrawdown) {
                 aggregateMaxDrawdown = res.getMaxDrawdown();
             }
             // If the worker terminated because the bankroll fell below table minimums, flag it
-            if (res.getFinalBankroll() <= 10.0) {
+            if (res.getFinalBankroll() <= tableMin) {
                 bankruptcyCount++;
             }
         }
@@ -92,11 +94,35 @@ public final class Main {
         double averagePnL = aggregatePnL / activeRuns;
         double riskOfRuin = ((double) bankruptcyCount / activeRuns) * 100.0;
 
+        // Calculate average EV per hand across all runs
+        double averageHandsPlayed = (double) totalHandsPlayed / activeRuns;
+        double evPerHand = aggregatePnL / totalHandsPlayed;
+
         System.out.println("\n============== RISK AUDIT SYSTEM EXECUTIVE REPORT ==============");
         System.out.println("Total Simulated Timelines : " + activeRuns);
         System.out.println("Average Expected Net P&L  : $" + String.format("%.2f", averagePnL));
         System.out.println("Worst-Case Absolute MDD   : $" + String.format("%.2f", aggregateMaxDrawdown));
         System.out.println("Calculated Risk of Ruin   : " + String.format("%.2f", riskOfRuin) + "%");
         System.out.println("================================================================");
+
+        // Expected Value Summary by Rounds Per Hour
+        int[] roundsPerHourOptions = {50, 60, 70, 80, 100, 120, 150, 200};
+
+        System.out.println("\n========== EXPECTED VALUE BY ROUNDS PER HOUR ==========");
+        System.out.println(String.format("%-20s %-18s %-18s %-18s %-18s", "Rounds/Hour", "EV/Hour", "EV/8hr Session", "Hours/Thread", "8hr Sessions/Thread"));
+        System.out.println("-----------------------------------------------------------------------------------------------");
+        for (int rph : roundsPerHourOptions) {
+            double evPerHour = evPerHand * rph;
+            double evPerSession = evPerHour * 8.0;
+            double hoursPerThread = averageHandsPlayed / rph;
+            double sessionsPerThread = hoursPerThread / 8.0;
+            System.out.println(String.format("%-20d $%-17s $%-17s %-18s %-18s",
+                    rph,
+                    String.format("%.2f", evPerHour),
+                    String.format("%.2f", evPerSession),
+                    String.format("%.1f", hoursPerThread),
+                    String.format("%.1f", sessionsPerThread)));
+        }
+        System.out.println("===============================================================================================");
     }
 }

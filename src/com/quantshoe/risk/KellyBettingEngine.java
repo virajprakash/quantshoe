@@ -10,7 +10,7 @@ public final class KellyBettingEngine {
      * Uses a conservative "Quarter-Kelly" multiplier to mitigate drawdown variance.
      */
     public KellyBettingEngine() {
-        this.fractionalKellyMultiplier = 0.25; // Quarter-Kelly (Standard practice for risk management)
+        this.fractionalKellyMultiplier = 0.5; // Quarter-Kelly (Standard practice for risk management)
         this.baseHouseEdge = -0.005;           // -0.5% starting edge at a normal table
         this.edgePerTrueCount = 0.005;         // Each True Count point adds +0.5% player equity
     }

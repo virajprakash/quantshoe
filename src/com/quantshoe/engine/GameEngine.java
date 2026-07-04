@@ -69,13 +69,29 @@ public final class GameEngine {
         for (int d = 3; d <= 6; d++) {
             HARD_MATRIX[9][d] = StrategyAction.DOUBLE_OR_HIT;
         }
+        // Illustrious 18 deviations: Stand on stiff hands when count is high
+        HARD_MATRIX[15][10] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
+        HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
+        HARD_MATRIX[12][2] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
+        HARD_MATRIX[12][3] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
+
+        // Illustrious 18 deviations: Double on hard totals when count is high
+        HARD_MATRIX[10][10] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+        HARD_MATRIX[10][11] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+        HARD_MATRIX[9][2] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+        HARD_MATRIX[9][7] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+
         //Surrender hard 17 against dealer ace
         HARD_MATRIX[17][11] = StrategyAction.SURRENDER_OR_HIT;
 
         HARD_MATRIX[16][8]  = StrategyAction.SURRENDER_16_VS_8_ABOVE_4;
         HARD_MATRIX[16][9]  = StrategyAction.SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4;
         HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
-        HARD_MATRIX[16][11] = StrategyAction.SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_5; // Index 11 is Dealer Ace
+        HARD_MATRIX[16][11] = StrategyAction.SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_3; // Index 11 is Dealer Ace
+
+        HARD_MATRIX[15][9]  = StrategyAction.SURRENDER_15_VS_9_ABOVE_2_ELSE_HIT;
+        HARD_MATRIX[15][10] = StrategyAction.SURRENDER_15_VS_10_WHEN_RUNNING_NON_NEGATIVE_ELSE_STAND_ABOVE_4;
+        HARD_MATRIX[15][11] = StrategyAction.SURRENDER_15_VS_ACE_ABOVE_MINUS_1_ELSE_STAND_ABOVE_5;
 
         // -------------------------------------------------------------
         // ENTER DATA HERE: SOFT TOTALS SKELETON (Ace + Card)
@@ -169,6 +185,7 @@ public final class GameEngine {
     private final double[] playerHandWagers = new double[4];
     private final boolean[] playerHandBusted = new boolean[4];
     private final boolean[] playerHandSurrendered = new boolean[4];
+    private final boolean[] playerHandFromSplitAces = new boolean[4];
 
     private final int[] dealerHand = new int[21];
     private int dealerCardCount;
@@ -237,7 +254,10 @@ public final class GameEngine {
 
             // Check for recursive split triggers (e.g., pairs) up to a max table limit of 4 hands
             while (activePlayerHandsCount < 4 && playerHandCardCounts[h] == 2 && playerHands[h][0] == playerHands[h][1]) {
-                if (evaluateSplitMatrix(playerHands[h][0], dealerUpcard, shoe.getTrueCount()) && currentBankroll >= (currentBankroll + playerHandWagers[h])) {
+                if (evaluateSplitMatrix(playerHands[h][0], dealerUpcard, shoe.getTrueCount()) && currentBankroll >= playerHandWagers[h]) {
+
+                    // Track if we are splitting Aces
+                    boolean splittingAces = (playerHands[h][0] == 11);
 
                     // Isolate the matching card and push it to a brand new hand index
                     int newHandIdx = activePlayerHandsCount;
@@ -248,6 +268,12 @@ public final class GameEngine {
                     // Truncate original hand back to 1 card
                     playerHandCardCounts[h] = 1;
 
+                    // Mark both hands as originating from split Aces (no further hitting allowed)
+                    if (splittingAces) {
+                        playerHandFromSplitAces[h] = true;
+                        playerHandFromSplitAces[newHandIdx] = true;
+                    }
+
                     // Immediately hit both newly separated hands to bring them back up to 2 cards
                     playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
                     playerHands[newHandIdx][playerHandCardCounts[newHandIdx]++] = shoe.dealCard().getValue();
@@ -256,6 +282,15 @@ public final class GameEngine {
                 } else {
                     break; // Matrix says don't split, continue to standard decision flow
                 }
+            }
+
+            // Split Aces receive one card only — no further hitting allowed
+            if (playerHandFromSplitAces[h]) {
+                if (calculateHandValue(playerHands[h], playerHandCardCounts[h]) > 21) {
+                    playerHandBusted[h] = true;
+                    currentBankroll -= playerHandWagers[h];
+                }
+                continue;
             }
 
             // Execute standard tactical decision loop for current active hand 'h'
@@ -269,7 +304,7 @@ public final class GameEngine {
 
                 switch (decision) {
                     case DOUBLE:
-                        if (playerHandCardCounts[h] == 2 && currentBankroll >= (currentBankroll + playerHandWagers[h])) {
+                        if (playerHandCardCounts[h] == 2 && currentBankroll >= playerHandWagers[h]) {
                             playerHandWagers[h] *= 2.0; // Double down wager profile
                             playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
                             handActive = false; // Forced single card ceiling limit on doubles
@@ -379,6 +414,30 @@ public final class GameEngine {
             return trueCount >= DeviationMatrix.SURRENDER_16_VS_8_INDEX;
         }
 
+        if (action == StrategyAction.SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4) {
+            return trueCount >= DeviationMatrix.SURRENDER_16_VS_9_INDEX;
+        }
+
+        if (action == StrategyAction.SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_3) {
+            return true; // Basic strategy: always surrender 16 vs Ace
+        }
+
+        if (action == StrategyAction.SURRENDER_OR_HIT) {
+            return true; // Basic strategy surrender (e.g., hard 17 vs Ace in some rulesets)
+        }
+
+        if (action == StrategyAction.SURRENDER_15_VS_ACE_ABOVE_MINUS_1_ELSE_STAND_ABOVE_5) {
+            return trueCount >= DeviationMatrix.SURRENDER_15_VS_ACE_INDEX;
+        }
+
+        if (action == StrategyAction.SURRENDER_15_VS_10_WHEN_RUNNING_NON_NEGATIVE_ELSE_STAND_ABOVE_4) {
+            return runningCount >= 0;
+        }
+
+        if (action == StrategyAction.SURRENDER_15_VS_9_ABOVE_2_ELSE_HIT) {
+            return trueCount >= DeviationMatrix.SURRENDER_15_VS_9_INDEX;
+        }
+
         // Pull assigned threshold bounds from your data map class
         double threshold = DeviationMatrix.getHardThreshold(total, dealerUpcard);
         if (Double.isNaN(threshold)) {
@@ -405,8 +464,10 @@ public final class GameEngine {
     }
 
     private boolean evaluateSplitMatrix(int cardValue, int dealerUpcard, double trueCount) {
-        // Plug your Split Matrix configurations here
-        return false;
+        if (cardValue < 2 || cardValue > 11 || dealerUpcard < 2 || dealerUpcard > 11) {
+            return false;
+        }
+        return SPLIT_MATRIX[cardValue][dealerUpcard];
     }
 
     private Decision evaluateMainMatrix(int[] hand, int count, int dealerUpcard, double trueCount) {
@@ -461,6 +522,33 @@ public final class GameEngine {
             case DOUBLE_OR_STAND:
                 if (count == 2) return Decision.DOUBLE;
                 return Decision.STAND;
+
+            // Overlap surrender cases: if we reach the main matrix, surrender was already
+            // evaluated and declined, so fall through to the secondary action
+            case SURRENDER_16_VS_10_RUNNING_COUNT:
+                // After surrender declined: stand if running count >= 0, else hit
+                return (getShoe().getRunningCount() >= 0) ? Decision.STAND : Decision.HIT;
+
+            case SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4:
+                return (trueCount >= DeviationMatrix.STAND_16_VS_9_INDEX) ? Decision.STAND : Decision.HIT;
+
+            case SURRENDER_16_VS_8_ABOVE_4:
+                return Decision.HIT;
+
+            case SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_3:
+                return (trueCount >= DeviationMatrix.STAND_16_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
+
+            case SURRENDER_OR_HIT:
+                return Decision.HIT;
+
+            case SURRENDER_15_VS_ACE_ABOVE_MINUS_1_ELSE_STAND_ABOVE_5:
+                return (trueCount >= DeviationMatrix.STAND_15_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
+
+            case SURRENDER_15_VS_10_WHEN_RUNNING_NON_NEGATIVE_ELSE_STAND_ABOVE_4:
+                return (trueCount >= DeviationMatrix.STAND_15_VS_10_INDEX) ? Decision.STAND : Decision.HIT;
+
+            case SURRENDER_15_VS_9_ABOVE_2_ELSE_HIT:
+                return Decision.HIT;
 
             case HIT:
             default:
@@ -530,6 +618,7 @@ public final class GameEngine {
             this.playerHandCardCounts[i] = 0;
             this.playerHandBusted[i] = false;
             this.playerHandSurrendered[i] = false;
+            this.playerHandFromSplitAces[i] = false;
             this.playerHandWagers[i] = 0.0;
         }
     }
