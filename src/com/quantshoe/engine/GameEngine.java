@@ -38,36 +38,76 @@ public final class GameEngine {
         // -------------------------------------------------------------
         // Loop/Set values for Player Hard Totals 4 through 21 vs Dealer Upcards (2 to 11)
 
-        // Example: For Hard 9 vs Dealer 3, 4, 5, 6 -> DOUBLE, else HIT
-        for (int d = 3; d <= 6; d++) HARD_MATRIX[9][d] = com.quantshoe.strategy.StrategyAction.DOUBLE_OR_HIT;
-
-        // Example: For Hard 12 vs Dealer 4, 5, 6 -> STAND
-        for (int d = 4; d <= 6; d++) HARD_MATRIX[12][d] = com.quantshoe.strategy.StrategyAction.STAND;
-
-        // Example: Hard 16 vs Dealer 9, 10, 11 -> SURRENDER (Commonly used index strategy)
-        HARD_MATRIX[16][9] = com.quantshoe.strategy.StrategyAction.SURRENDER_OR_HIT;
-        HARD_MATRIX[16][10] = com.quantshoe.strategy.StrategyAction.SURRENDER_OR_HIT;
-        HARD_MATRIX[16][11] = com.quantshoe.strategy.StrategyAction.SURRENDER_OR_HIT;
-
-        // Hard 17 and above always stands against everything
         for (int p = 17; p <= 21; p++) {
             for (int d = 2; d <= 11; d++) {
-                HARD_MATRIX[p][d] = com.quantshoe.strategy.StrategyAction.STAND;
+                HARD_MATRIX[p][d] = StrategyAction.STAND;
             }
         }
 
+// 2. Hard 12 through 16: STAND against low dealer upcards (2 through 6)
+// (Note: Hard 12 vs 2 or 3 is a HIT in basic strategy, handled below)
+        for (int p = 13; p <= 16; p++) {
+            for (int d = 2; d <= 6; d++) {
+                HARD_MATRIX[p][d] = StrategyAction.STAND;
+            }
+        }
+        for (int d = 4; d <= 6; d++) {
+            HARD_MATRIX[12][d] = StrategyAction.STAND; // 12 stands only vs 4, 5, 6
+        }
+
+// 3. Hard 11: Always DOUBLE against 2 through 10, HIT against Ace (S17 baseline)
+        for (int d = 2; d <= 11; d++) {
+            HARD_MATRIX[11][d] = StrategyAction.DOUBLE_OR_HIT;
+        }
+
+// 4. Hard 10: DOUBLE against 2 through 9, HIT against 10 and Ace
+        for (int d = 2; d <= 9; d++) {
+            HARD_MATRIX[10][d] = StrategyAction.DOUBLE_OR_HIT;
+        }
+
+// 5. Hard 9: DOUBLE against 3 through 6, HIT against everything else
+        for (int d = 3; d <= 6; d++) {
+            HARD_MATRIX[9][d] = StrategyAction.DOUBLE_OR_HIT;
+        }
+        //Surrender hard 17 against dealer ace
+        HARD_MATRIX[17][11] = StrategyAction.SURRENDER_OR_HIT;
+
+        HARD_MATRIX[16][8]  = StrategyAction.SURRENDER_16_VS_8_ABOVE_4;
+        HARD_MATRIX[16][9]  = StrategyAction.SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4;
+        HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
+        HARD_MATRIX[16][11] = StrategyAction.SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_5; // Index 11 is Dealer Ace
 
         // -------------------------------------------------------------
         // ENTER DATA HERE: SOFT TOTALS SKELETON (Ace + Card)
         // -------------------------------------------------------------
         // Index matches the OTHER card. (e.g., SOFT_MATRIX[7] means Ace + 7 = Soft 18)
 
-        // Example: Ace + 7 (Soft 18) vs Dealer 2, 7, 8 -> STAND
-        SOFT_MATRIX[7][2] = com.quantshoe.strategy.StrategyAction.STAND;
+        SOFT_MATRIX[2][5] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[2][6] = StrategyAction.DOUBLE_OR_HIT;
+
+        SOFT_MATRIX[3][5] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[3][6] = StrategyAction.DOUBLE_OR_HIT;
+
+        SOFT_MATRIX[4][4] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[4][5] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[4][6] = StrategyAction.DOUBLE_OR_HIT;
+
+        SOFT_MATRIX[5][4] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[5][5] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[5][6] = StrategyAction.DOUBLE_OR_HIT;
+
+
+        SOFT_MATRIX[6][2] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+        SOFT_MATRIX[6][3] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[6][4] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[6][5] = StrategyAction.DOUBLE_OR_HIT;
+        SOFT_MATRIX[6][6] = StrategyAction.DOUBLE_OR_HIT;
+
+        // Example: Ace + 7 (Soft 18) vs Dealer 7, 8 -> STAND
         SOFT_MATRIX[7][7] = com.quantshoe.strategy.StrategyAction.STAND;
         SOFT_MATRIX[7][8] = com.quantshoe.strategy.StrategyAction.STAND;
-        // Ace + 7 vs Dealer 3, 4, 5, 6 -> DOUBLE
-        for (int d = 3; d <= 6; d++) SOFT_MATRIX[7][d] = com.quantshoe.strategy.StrategyAction.DOUBLE_OR_STAND;
+        // Ace + 7 vs Dealer 2, 3, 4, 5, 6 -> DOUBLE
+        for (int d = 2; d <= 6; d++) SOFT_MATRIX[7][d] = com.quantshoe.strategy.StrategyAction.DOUBLE_OR_STAND;
         // Ace + 7 vs Dealer 9, 10, 11 -> HIT
         for (int d = 9; d <= 11; d++) SOFT_MATRIX[7][d] = com.quantshoe.strategy.StrategyAction.HIT;
 
@@ -77,26 +117,46 @@ public final class GameEngine {
                 SOFT_MATRIX[p][d] = com.quantshoe.strategy.StrategyAction.STAND;
             }
         }
+        SOFT_MATRIX[8][4] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
+        SOFT_MATRIX[8][5] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
+        SOFT_MATRIX[8][6] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
 
 
         // -------------------------------------------------------------
         // ENTER DATA HERE: SPLITTING SKELETON
         // -------------------------------------------------------------
         // Index matches the face value of ONE of the cards (e.g., index 8 for a pair of 8s, 11 for Aces)
-
-        // Example: Always split Aces (11) and 8s
+// 1. Always split Aces (11) and 8s against any dealer upcard
         for (int d = 2; d <= 11; d++) {
-            SPLIT_MATRIX[8][d] = true;
             SPLIT_MATRIX[11][d] = true;
+            SPLIT_MATRIX[8][d] = true;
         }
 
-        // Example: Split 4s ONLY against Dealer 5 and 6
+// 2. Split 9s against 2 through 9, EXCEPT against a 7. STAND against 10 and Ace.
+        for (int d = 2; d <= 9; d++) {
+            if (d != 7) {
+                SPLIT_MATRIX[9][d] = true;
+            }
+        }
+
+// 3. Split 7s and 3s against 2 through 7. Otherwise false (HIT).
+// 4. Split 2s and 6s against 2 through 6. Otherwise false (HIT).
+        for (int d = 2; d <= 7; d++) {
+            SPLIT_MATRIX[7][d] = true;
+            SPLIT_MATRIX[3][d] = true;
+        }
+        for (int d = 2; d <= 6; d++) {
+            SPLIT_MATRIX[6][d] = true;
+            SPLIT_MATRIX[2][d] = true;
+        }
+
+// 5. Split 4s ONLY against dealer 5 and 6
         SPLIT_MATRIX[4][5] = true;
         SPLIT_MATRIX[4][6] = true;
-
         // Example: Never split 5s or 10s/Faces
         // (They remain false by default due to our initialization loop)
     }
+
     private final Shoe shoe;
     private final double tableMinBet;
     private final double tableMaxBet;
@@ -165,7 +225,7 @@ public final class GameEngine {
 
         // 2. --- EXTENSION: SURRENDER PROTOCOL ---
         // Evaluated immediately on the initial 2-card hand
-        if (evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount())) {
+        if (evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
             playerHandSurrendered[0] = true;
             currentBankroll -= (baselineWager * 0.5);
             return -(baselineWager * 0.5);
@@ -295,8 +355,52 @@ public final class GameEngine {
         return trueCount >= 3.0; // Statistical baseline: Insurance is mathematically viable at True +3
     }
 
-    private boolean evaluateSurrenderMatrix(int[] initialHand, int dealerUpcard, double trueCount) {
-        // Plug your Surrender Matrix configurations here
+    /**
+     * Evaluates whether the initial 2-card player hand qualifies for a baseline,
+     * true-count, or running-count dependent surrender deviation.
+     */
+    private boolean evaluateSurrenderMatrix(int[] initialHand, int dealerUpcard, double trueCount, int runningCount) {
+        int total = initialHand[0] + initialHand[1]; // Ensure pulling from initial 2-card indices
+
+        // Safety boundary constraints
+        boolean isSoft = (initialHand[0] == 11 || initialHand[1] == 11);
+        if (isSoft || total > 21 || total < 4) {
+            return false;
+        }
+
+        StrategyAction action = HARD_MATRIX[total][dealerUpcard];
+
+        // Scenario A: Static Basic Strategy Surrender (Always Surrender)
+        if (action == StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT) {
+            return true;
+        }
+
+        if (action == StrategyAction.SURRENDER_16_VS_8_ABOVE_4) {
+            return trueCount >= DeviationMatrix.SURRENDER_16_VS_8_INDEX;
+        }
+
+        // Pull assigned threshold bounds from your data map class
+        double threshold = DeviationMatrix.getHardThreshold(total, dealerUpcard);
+        if (Double.isNaN(threshold)) {
+            return false; // Safe fallback if data missing
+        }
+
+        // Scenario B: True Count Verification Layers
+        if (action == StrategyAction.DEVIATE_SURRENDER_IF_TRUE_COUNT_ABOVE) {
+            return trueCount >= threshold;
+        }
+        if (action == StrategyAction.DEVIATE_SURRENDER_IF_TRUE_COUNT_BELOW) {
+            return trueCount <= threshold;
+        }
+
+        // Scenario C: Running Count Verification Layers
+        if (action == StrategyAction.DEVIATE_SURRENDER_IF_RUNNING_COUNT_ABOVE) {
+            return runningCount >= threshold;
+        }
+        if (action == StrategyAction.DEVIATE_SURRENDER_IF_RUNNING_COUNT_BELOW) {
+            return runningCount <= threshold;
+        }
+
         return false;
     }
 
@@ -307,21 +411,28 @@ public final class GameEngine {
 
     private Decision evaluateMainMatrix(int[] hand, int count, int dealerUpcard, double trueCount) {
         int total = calculateHandValue(hand, count);
-        boolean isSoft = checkIsSoftHand(hand, count); // Your existing tracking logic
+        if (total > 21) return Decision.STAND; // Safety catch
 
+        boolean isSoft = checkIsSoftHand(hand, count);
         StrategyAction action;
+        double threshold; // Variable to store our cleanly routed threshold number
+
         if (isSoft) {
+            // Isolate the card next to your Ace (e.g., Soft 18 -> nonAceValue = 7)
             int nonAceValue = total - 11;
             if (nonAceValue < 2) nonAceValue = 2;
             if (nonAceValue > 10) return Decision.STAND;
-            action = SOFT_MATRIX[nonAceValue][dealerUpcard];
-        } else {
-            if (total > 21) return Decision.STAND;
-            action = HARD_MATRIX[total][dealerUpcard];
-        }
 
-        // --- INTERCEPT ACTION VECTOR VIA TRUE COUNT DEVIATION LOOKUPS ---
-        double threshold = DeviationMatrix.getThreshold(total, dealerUpcard);
+            action = SOFT_MATRIX[nonAceValue][dealerUpcard];
+
+            // ROUTING VECTOR A: Fetch exclusively from your soft threshold grid
+            threshold = DeviationMatrix.getSoftThreshold(nonAceValue, dealerUpcard);
+        } else {
+            action = HARD_MATRIX[total][dealerUpcard];
+
+            // ROUTING VECTOR B: Fetch exclusively from your hard threshold grid
+            threshold = DeviationMatrix.getHardThreshold(total, dealerUpcard);
+        }
 
         switch (action) {
             case DEVIATE_STAND_IF_ABOVE:
@@ -346,9 +457,10 @@ public final class GameEngine {
                 return Decision.STAND;
 
             case DOUBLE_OR_HIT:
+                return count == 2 ? Decision.DOUBLE : Decision.HIT;
             case DOUBLE_OR_STAND:
                 if (count == 2) return Decision.DOUBLE;
-                return (action == com.quantshoe.strategy.StrategyAction.DOUBLE_OR_HIT) ? Decision.HIT : Decision.STAND;
+                return Decision.STAND;
 
             case HIT:
             default:

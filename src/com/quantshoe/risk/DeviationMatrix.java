@@ -3,11 +3,19 @@ package com.quantshoe.risk;
 public final class DeviationMatrix {
     // Indices: [Player Total/Card][Dealer Upcard]
     private static final double[][] DEVIATION_THRESHOLDS = new double[22][12];
+    private static final double[][] SOFT_DEVIATION_THRESHOLDS = new double[11][12];
 
+    public static final double SURRENDER_16_VS_8_INDEX = 4.0;
+
+    public static final double SURRENDER_16_VS_9_INDEX = -1.0;
+    public static final double STAND_16_VS_9_INDEX = 4.0;
+
+    public static final double STAND_16_VS_ACE_INDEX = 5.0;
     static {
         // Initialize everything to an unreachable default threshold
         for (int p = 0; p < 22; p++) {
             for (int d = 0; d < 12; d++) {
+                if (p < 11) SOFT_DEVIATION_THRESHOLDS[p][d] = Double.NaN;
                 DEVIATION_THRESHOLDS[p][d] = Double.NaN;
             }
         }
@@ -21,7 +29,7 @@ public final class DeviationMatrix {
         DEVIATION_THRESHOLDS[0][11] = 3.0; // Hand index 0 represents insurance rule map
 
         // Example 2: Illustrious 18 - Hard 16 vs Dealer 10
-        // Stand if True Count >= 0, otherwise Hit
+        // Stand if Running Count >= 0, otherwise Hit
         DEVIATION_THRESHOLDS[16][10] = 0.0;
 
         // Example 3: Illustrious 18 - Hard 15 vs Dealer 10
@@ -35,9 +43,18 @@ public final class DeviationMatrix {
         // Example 5: Illustrious 18 - Hard 12 vs Dealer 2
         // Stand if True Count >= 3.0, otherwise Hit
         DEVIATION_THRESHOLDS[12][2] = 3.0;
+        DEVIATION_THRESHOLDS[12][3] = 2.0;
+        DEVIATION_THRESHOLDS[12][4] = 0;
+
+
     }
 
-    public static double getThreshold(int playerTotal, int dealerUpcard) {
+    public static double getHardThreshold(int playerTotal, int dealerUpcard) {
         return DEVIATION_THRESHOLDS[playerTotal][dealerUpcard];
     }
+
+    public static double getSoftThreshold(int nonAceCardValue, int dealerUpcard) {
+        return SOFT_DEVIATION_THRESHOLDS[nonAceCardValue][dealerUpcard];
+    }
+
 }
