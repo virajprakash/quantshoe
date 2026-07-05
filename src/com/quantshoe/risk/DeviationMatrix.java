@@ -33,6 +33,7 @@ public final class DeviationMatrix {
 
         // Example 1: The Insurance Index
         // Insurance is statistically viable at True +3.0 and above
+        DEVIATION_THRESHOLDS[8][6] = 2.0;
         DEVIATION_THRESHOLDS[0][11] = 3.0; // Hand index 0 represents insurance rule map
 
         // Example 2: Illustrious 18 - Hard 16 vs Dealer 10

@@ -2,6 +2,8 @@ package com.quantshoe;
 import com.quantshoe.pipeline.DataExporter;
 import com.quantshoe.pipeline.SimulationResult;
 import com.quantshoe.pipeline.SimulationWorker;
+import com.quantshoe.risk.BettingStrategy;
+import com.quantshoe.risk.FixedSpreadBettingEngine;
 import com.quantshoe.risk.KellyBettingEngine;
 
 import java.util.ArrayList;
@@ -18,9 +20,12 @@ public final class Main {
         int handsPerRun = 100_000;         // Hands per run
         int totalDecks = 6;                // Decks in the shoe
 
-        double startingBankroll = 15000; // Starting bankroll
-        double tableMin = 100;             // Table minimum bet
-        double tableMax = 10000.0;           // Table maximum bet
+        double startingBankroll = 10000; // Starting bankroll
+        double tableMin = 15;             // Table minimum bet
+        double tableMax = 225;           // Table maximum bet (1-12 spread: $15 x 12)
+
+        // Betting mode: "kelly" for Half-Kelly sizing, "fixed" for fixed spread
+        String bettingMode = "kelly";
 
         String outputFilePath = "quant_blackjack_results.csv";
 
@@ -32,9 +37,19 @@ public final class Main {
         ExecutorService threadPool = Executors.newFixedThreadPool(availableCores);
         List<SimulationWorker> tasks = new ArrayList<>();
 
-        // 3. Create simulation tasks
+        // 3. Create betting strategy
+        BettingStrategy bettingStrategy;
+        if (bettingMode.equals("kelly")) {
+            bettingStrategy = new KellyBettingEngine();
+            System.out.println("Betting Mode: Half-Kelly Criterion");
+        } else {
+            bettingStrategy = new FixedSpreadBettingEngine(tableMin, tableMax);
+            System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + ")");
+        }
+
+        // 4. Create simulation tasks
         for (int i = 0; i < simulationRuns; i++) {
-            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax));
+            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, bettingStrategy));
         }
 
         System.out.println("Executing " + simulationRuns + " parallel tests ("
@@ -44,10 +59,10 @@ public final class Main {
         long startTime = System.currentTimeMillis();
 
         try {
-            // 4. Run all simulations in parallel
+            // 5. Run all simulations in parallel
             List<Future<SimulationResult>> futures = threadPool.invokeAll(tasks);
 
-            // 5. Collect results
+            // 6. Collect results
             for (Future<SimulationResult> future : futures) {
                 globalResults.add(future.get());
             }
@@ -62,17 +77,17 @@ public final class Main {
         long endTime = System.currentTimeMillis();
         System.out.println("Computation complete! Processing execution time: " + (endTime - startTime) + "ms");
 
-        // 6. Export results to CSV
+        // 7. Export results to CSV
         DataExporter.exportToCSV(outputFilePath, globalResults);
 
-        // 7. Print summary report
-        printConsoleSummaryReport(globalResults, startingBankroll, tableMin, tableMax, handsPerRun);
+        // 8. Print summary report
+        printConsoleSummaryReport(globalResults, startingBankroll, tableMin, tableMax, handsPerRun, bettingStrategy);
     }
 
     /**
      * Aggregates multi-threaded datasets into single performance metrics.
      */
-    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap, double tableMin, double tableMax, int handsPerRun) {
+    private static void printConsoleSummaryReport(List<SimulationResult> results, double initialCap, double tableMin, double tableMax, int handsPerRun, BettingStrategy bettingStrategy) {
         double aggregatePnL = 0.0;
         double aggregateMaxDrawdown = 0.0;
         int activeRuns = results.size();
@@ -127,12 +142,11 @@ public final class Main {
         System.out.println("===============================================================================================");
 
         // Bet Spread Summary
-        KellyBettingEngine kellyEngine = new KellyBettingEngine();
         System.out.println("\n=================== BET SPREAD (Starting Bankroll) ===================");
         System.out.println(String.format("%-18s %-18s", "True Count", "Wager"));
         System.out.println("--------------------------------------");
         for (int tc = -5; tc <= 10; tc++) {
-            double rawWager = kellyEngine.calculateOptimalWager(tc, initialCap);
+            double rawWager = bettingStrategy.calculateOptimalWager(tc, initialCap);
             double effectiveWager = Math.max(tableMin, Math.min(rawWager, tableMax));
             if (rawWager < tableMin) {
                 effectiveWager = tableMin;

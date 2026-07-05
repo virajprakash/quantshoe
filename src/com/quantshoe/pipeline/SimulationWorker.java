@@ -2,7 +2,7 @@ package com.quantshoe.pipeline;
 
 import com.quantshoe.core.Shoe;
 import com.quantshoe.engine.GameEngine;
-import com.quantshoe.risk.KellyBettingEngine;
+import com.quantshoe.risk.BettingStrategy;
 
 import java.util.concurrent.Callable;
 
@@ -14,18 +14,17 @@ public final class SimulationWorker implements Callable<SimulationResult> {
     private final double tableMax;
 
     private final GameEngine engine;
-    private final KellyBettingEngine bettingEngine;
+    private final BettingStrategy bettingEngine;
 
-    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax) {
+    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, BettingStrategy bettingStrategy) {
         this.handsToSimulate = handsToSimulate;
         this.totalDecks = totalDecks;
         this.startingBankroll = startingBankroll;
         this.tableMin = tableMin;
         this.tableMax = tableMax;
 
-        // Each worker gets its own engine and betting state (thread-safe by isolation)
         this.engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax);
-        this.bettingEngine = new KellyBettingEngine();
+        this.bettingEngine = bettingStrategy;
     }
 
     @Override
@@ -44,8 +43,8 @@ public final class SimulationWorker implements Callable<SimulationResult> {
                 break;
             }
 
-            // 2. Reshuffle at 75% penetration
-            if (activeShoe.getCardsRemaining() < (totalDecks * 52 * 0.25)) {
+            // 2. Reshuffle at 83% penetration (1 deck cut off)
+            if (activeShoe.getCardsRemaining() < 52) {
                 activeShoe.shuffle();
             }
 

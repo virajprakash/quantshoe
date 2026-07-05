@@ -80,6 +80,7 @@ public final class GameEngine {
         HARD_MATRIX[10][11] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
         HARD_MATRIX[9][2] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
         HARD_MATRIX[9][7] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
+        HARD_MATRIX[8][6] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
 
         //Surrender hard 17 against dealer ace
         HARD_MATRIX[17][11] = StrategyAction.SURRENDER_OR_HIT;

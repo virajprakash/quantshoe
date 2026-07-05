@@ -1,6 +1,6 @@
 package com.quantshoe.risk;
 
-public final class KellyBettingEngine {
+public final class KellyBettingEngine implements BettingStrategy {
     private final double fractionalKellyMultiplier;
     private final double baseHouseEdge;
     private final double edgePerTrueCount;
@@ -30,6 +30,7 @@ public final class KellyBettingEngine {
      * @param currentBankroll The player's current bankroll.
      * @return The dollar amount to bet (0.0 if no edge).
      */
+    @Override
     public double calculateOptimalWager(double trueCount, double currentBankroll) {
         // 1. Estimate player edge from true count
         // e.g., TC +3 -> -0.005 + (3 * 0.005) = +1.0%
