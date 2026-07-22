@@ -191,12 +191,18 @@ public final class GameEngine {
     private final int[] dealerHand = new int[21];
     private int dealerCardCount;
     private double currentBankroll;
+    private final boolean allowResplitAces;
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, false);
+    }
+
+    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowResplitAces) {
         this.shoe = new Shoe(totalDecks);
         this.currentBankroll = startingBankroll;
         this.tableMinBet = tableMinBet;
         this.tableMaxBet = tableMaxBet;
+        this.allowResplitAces = allowResplitAces;
     }
 
     public double playRound(double targetBet) {
@@ -251,7 +257,8 @@ public final class GameEngine {
         for (int h = 0; h < activePlayerHandsCount; h++) {
 
             // Check for recursive split triggers (e.g., pairs) up to a max table limit of 4 hands
-            while (activePlayerHandsCount < 4 && playerHandCardCounts[h] == 2 && playerHands[h][0] == playerHands[h][1]) {
+            while (activePlayerHandsCount < 4 && playerHandCardCounts[h] == 2 && playerHands[h][0] == playerHands[h][1]
+                    && (!playerHandFromSplitAces[h] || allowResplitAces)) {
                 if (evaluateSplitMatrix(playerHands[h][0], dealerUpcard, shoe.getTrueCount()) && currentBankroll >= playerHandWagers[h]) {
 
                     // Track if we are splitting Aces

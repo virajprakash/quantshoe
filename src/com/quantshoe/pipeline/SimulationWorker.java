@@ -43,8 +43,8 @@ public final class SimulationWorker implements Callable<SimulationResult> {
                 break;
             }
 
-            // 2. Reshuffle at 83% penetration (1 deck cut off)
-            if (activeShoe.getCardsRemaining() < 52) {
+            // 2. Reshuffle at 75% penetration (1.5 decks cut off)
+            if (activeShoe.getCardsRemaining() < 78) {
                 activeShoe.shuffle();
             }
 

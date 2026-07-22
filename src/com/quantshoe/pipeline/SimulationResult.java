@@ -17,4 +17,6 @@ public final class SimulationResult {
     public double getFinalBankroll() { return finalBankroll; }
     public double getNetProfit() { return netProfit; }
     public double getMaxDrawdown() { return maxDrawdown; }
+    public double getHourlyEV() { return netProfit / totalHandsPlayed; }
+
 }

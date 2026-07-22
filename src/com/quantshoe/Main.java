@@ -20,9 +20,9 @@ public final class Main {
         int handsPerRun = 100_000;         // Hands per run
         int totalDecks = 6;                // Decks in the shoe
 
-        double startingBankroll = 10000; // Starting bankroll
-        double tableMin = 15;             // Table minimum bet
-        double tableMax = 225;           // Table maximum bet (1-12 spread: $15 x 12)
+        double startingBankroll = 50000; // Starting bankroll
+        double tableMin = 25;             // Table minimum bet
+        double tableMax = 5000;           // Table maximum bet (1-12 spread: $15 x 12)
 
         // Betting mode: "kelly" for Half-Kelly sizing, "fixed" for fixed spread
         String bettingMode = "kelly";
