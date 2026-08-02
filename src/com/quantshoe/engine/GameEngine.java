@@ -191,17 +191,19 @@ public final class GameEngine {
     private final int[] dealerHand = new int[21];
     private int dealerCardCount;
     private double currentBankroll;
+    private final boolean allowLateSurrender;
     private final boolean allowResplitAces;
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, false);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true);
     }
 
-    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowResplitAces) {
+    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
         this.shoe = new Shoe(totalDecks);
         this.currentBankroll = startingBankroll;
         this.tableMinBet = tableMinBet;
         this.tableMaxBet = tableMaxBet;
+        this.allowLateSurrender = allowLateSurrender;
         this.allowResplitAces = allowResplitAces;
     }
 
@@ -247,7 +249,7 @@ public final class GameEngine {
         }
 
         // 2. Surrender check (initial 2-card hand only)
-        if (evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
+        if (allowLateSurrender && evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
             playerHandSurrendered[0] = true;
             currentBankroll -= (baselineWager * 0.5);
             return -(baselineWager * 0.5);

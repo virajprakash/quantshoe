@@ -7,7 +7,7 @@ import numpy as np
 df = pd.read_csv('quant_blackjack_results.csv')
 
 # Derived columns
-starting_bankroll = 50000  # infer from context
+starting_bankroll = 25000  # infer from context
 df['ROI_pct'] = (df['Net_Profit'] / starting_bankroll) * 100
 df['Busted'] = df['Final_Bankroll'] <= 25  # approximate table min
 df['Drawdown_pct'] = (df['Max_Drawdown'] / (starting_bankroll + df['Net_Profit'].clip(lower=0))) * 100
@@ -37,7 +37,7 @@ game_rules = [
     'Insurance Offered (Ace Up)',
     'Re-split Aces Not Allowed',
     'No Draw to Splitted Aces',
-    'Penetration: 75%',
+    'Penetration: 1.5',
 ]
 
 # Use a clean style

@@ -12,18 +12,22 @@ public final class SimulationWorker implements Callable<SimulationResult> {
     private final double startingBankroll;
     private final double tableMin;
     private final double tableMax;
-
+    private final double deckPenetration;
+    private boolean lateSurrenderAllowed = true;
+    private boolean resplitAcesAllowed = false;
     private final GameEngine engine;
     private final BettingStrategy bettingEngine;
 
-    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, BettingStrategy bettingStrategy) {
+    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy) {
         this.handsToSimulate = handsToSimulate;
         this.totalDecks = totalDecks;
         this.startingBankroll = startingBankroll;
         this.tableMin = tableMin;
         this.tableMax = tableMax;
-
-        this.engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax);
+        this.deckPenetration = deckPenetration;
+        this.lateSurrenderAllowed = lateSurrenderAllowed;
+        this.resplitAcesAllowed = resplitAcesAllowed;
+        this.engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed);
         this.bettingEngine = bettingStrategy;
     }
 
@@ -43,8 +47,8 @@ public final class SimulationWorker implements Callable<SimulationResult> {
                 break;
             }
 
-            // 2. Reshuffle at 75% penetration (1.5 decks cut off)
-            if (activeShoe.getCardsRemaining() < 78) {
+            // 2. Reshuffle at appropriate level of deck penetration (# of decks cut off)
+            if (activeShoe.getCardsRemaining() < ((int) (52 * deckPenetration))) {
                 activeShoe.shuffle();
             }
 

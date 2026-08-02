@@ -20,9 +20,14 @@ public final class Main {
         int handsPerRun = 100_000;         // Hands per run
         int totalDecks = 6;                // Decks in the shoe
 
-        double startingBankroll = 15000; // Starting bankroll
+        double startingBankroll = 25000; // Starting bankroll
         double tableMin = 25;             // Table minimum bet
-        double tableMax = 5000;           // Table maximum bet (1-12 spread: $15 x 12)
+        double tableMax = 3000;           // Table maximum bet (1-12 spread: $15 x 12)
+        double deckPenetration = 1.5;
+
+        boolean lateSurrenderAllowed = true;
+        boolean resplitAcesAllowed = false;
+
 
         // Betting mode: "kelly" for Half-Kelly sizing, "fixed" for fixed spread
         String bettingMode = "fixed";
@@ -49,7 +54,7 @@ public final class Main {
 
         // 4. Create simulation tasks
         for (int i = 0; i < simulationRuns; i++) {
-            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, bettingStrategy));
+            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy));
         }
 
         System.out.println("Executing " + simulationRuns + " parallel tests ("
