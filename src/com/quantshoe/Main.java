@@ -17,26 +17,64 @@ import java.util.concurrent.Future;
 public final class Main {
 
     public static void main(String[] args) {
-        // 1. Simulation parameters
-        int simulationRuns = 1000;           // Number of simulation runs
-        int handsPerRun = 100_000;         // Hands per run
-        int totalDecks = 6;                // Decks in the shoe
+        // 1. Simulation parameters (defaults, overridable via command-line args)
+        int simulationRuns = 1000;
+        int handsPerRun = 100_000;
+        int totalDecks = 6;
 
-        double startingBankroll = 10000; // Starting bankroll
-        double tableMin = 25;             // Table minimum bet
-        double tableMax = 3000;           // Table maximum bet (1-12 spread: $15 x 12)
+        double startingBankroll = 15000;
+        double tableMin = 25;
+        double tableMax = 3000;
         double deckPenetration = 1.5;
 
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
 
-        // Game engine mode: "h17" or "s17"
         String gameMode = "S17";
-
-        // Betting mode: "kelly" for Half-Kelly sizing, "fixed" for fixed spread
         String bettingMode = "fixed";
-
         String outputFilePath = "quant_blackjack_results.csv";
+
+        // Parse command-line arguments
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--simRuns":
+                    simulationRuns = Integer.parseInt(args[++i]);
+                    break;
+                case "--handsPerRun":
+                    handsPerRun = Integer.parseInt(args[++i]);
+                    break;
+                case "--startingBankroll":
+                    startingBankroll = Double.parseDouble(args[++i]);
+                    break;
+                case "--tableMin":
+                    tableMin = Double.parseDouble(args[++i]);
+                    break;
+                case "--tableMax":
+                    tableMax = Double.parseDouble(args[++i]);
+                    break;
+                case "--deckPen":
+                    deckPenetration = Double.parseDouble(args[++i]);
+                    break;
+                case "--gameMode":
+                    gameMode = args[++i];
+                    break;
+                case "--bettingMode":
+                    bettingMode = args[++i];
+                    break;
+                default:
+                    System.err.println("Unknown argument: " + args[i]);
+                    System.err.println("Usage: java com.quantshoe.Main [options]");
+                    System.err.println("  --simRuns <int>            Number of simulation runs (default: 1000)");
+                    System.err.println("  --handsPerRun <int>        Hands per run (default: 100000)");
+                    System.err.println("  --startingBankroll <double> Starting bankroll (default: 10000)");
+                    System.err.println("  --tableMin <double>        Table minimum bet (default: 25)");
+                    System.err.println("  --tableMax <double>        Table maximum bet (default: 3000)");
+                    System.err.println("  --deckPen <double>         Deck penetration (default: 1.5)");
+                    System.err.println("  --gameMode <S17|H17>       Dealer soft-17 rule (default: S17)");
+                    System.err.println("  --bettingMode <kelly|fixed> Bet sizing strategy (default: fixed)");
+                    System.exit(1);
+            }
+        }
 
         // 2. Set up thread pool
         int availableCores = Runtime.getRuntime().availableProcessors();
@@ -170,7 +208,7 @@ public final class Main {
             }
             System.out.println(String.format("%-18s $%-17s",
                     (tc >= 0 ? "+" : "") + tc,
-                    String.format("%.0f", effectiveWager)));
+                    String.format("%.0f", effectiveWager) + " x " + bettingStrategy.getNumHands(tc)));
         }
         System.out.println("======================================================================");
     }

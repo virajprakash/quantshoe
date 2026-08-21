@@ -69,7 +69,6 @@ public final class S17GameEngine extends GameEngine {
         // =============================================
         // S17 HARD DEVIATIONS (Illustrious 18 for S17)
         // =============================================
-        // TODO: Replace these with your S17-specific deviation indices
         HARD_MATRIX[15][10] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
         HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
         HARD_MATRIX[12][2] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
@@ -83,7 +82,6 @@ public final class S17GameEngine extends GameEngine {
         HARD_MATRIX[8][6] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
 
         // S17 Surrender entries
-        // TODO: Replace with S17-specific surrender rules
         HARD_MATRIX[16][8]  = StrategyAction.SURRENDER_16_VS_8_ABOVE_4;
         HARD_MATRIX[16][9]  = StrategyAction.SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4;
         HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
@@ -134,7 +132,6 @@ public final class S17GameEngine extends GameEngine {
         }
 
         // S17 soft deviations
-        // TODO: Replace with S17-specific soft deviation actions
         SOFT_MATRIX[8][4] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
         SOFT_MATRIX[8][5] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
         SOFT_MATRIX[8][6] = StrategyAction.DEVIATE_DOUBLE_IF_STAND;
@@ -173,7 +170,6 @@ public final class S17GameEngine extends GameEngine {
         // =============================================
         // S17 DEVIATION THRESHOLDS
         // =============================================
-        // TODO: Replace with S17-specific deviation threshold indices
         DEVIATION_THRESHOLDS[8][6] = 2.0;
         // DEVIATION_THRESHOLDS[0][11] = 3.0; Insurance
         DEVIATION_THRESHOLDS[16][9] = 4.0;
@@ -206,12 +202,11 @@ public final class S17GameEngine extends GameEngine {
         SPLIT_DEVIATION_THRESHOLDS[10][6] = 4.0;
 
         // S17 surrender/stand deviation indices
-        // TODO: Replace with S17-specific values
         SURRENDER_16_VS_8_INDEX = 4.0;
         SURRENDER_16_VS_9_INDEX = -1.0;
         STAND_16_VS_9_INDEX = 4.0;
         STAND_16_VS_ACE_INDEX = 3.0;
-        SURRENDER_15_VS_ACE_INDEX = -1.0;
+        SURRENDER_15_VS_ACE_INDEX = 2;
         STAND_15_VS_ACE_INDEX = 5.0;
         SURRENDER_15_VS_9_INDEX = 2.0;
         STAND_15_VS_10_INDEX = 4.0;
