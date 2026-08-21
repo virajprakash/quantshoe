@@ -49,7 +49,7 @@ git clone https://github.com/virajprakash/quantshoe.git
 
    **Example:**
    ```bash
-   java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode fixed --deckEstimation half --ramp 1,2x2,6x2,10x2,12x2
+   java com.quantshoe.Main --simRuns 1000 --handsPerRun 100000 --startingBankroll 25000 --tableMin 25 --tableMax 300 --deckPen 1.5 --gameMode H17 --bettingMode fixed --deckEstimation full --ramp 1,2x1,6x1,10x1,12x1
    ```
    All flags are optional — omitted flags use their default values.
 5. Results print to the console and export to `quant_blackjack_results.csv`.
