@@ -34,19 +34,19 @@ git clone https://github.com/virajprakash/quantshoe.git
    ```bash
    java -cp out/production/QuantShoe-Sim com.quantshoe.Main [options]
    ```
-   | Flag | Type | Default | Description |
-   |------|------|---------|-------------|
-   | `--simRuns` | int | 1000 | Number of simulation runs |
-   | `--handsPerRun` | int | 100000 | Hands per run |
-   | `--startingBankroll` | double | 10000 | Starting bankroll |
-   | `--tableMin` | double | 25 | Table minimum bet |
-   | `--tableMax` | double | 3000 | Table maximum bet |
-   | `--deckPen` | double | 1.5 | Deck penetration (decks cut off before reshuffle) |
-   | `--gameMode` | string | S17 | Dealer soft-17 rule (`S17` or `H17`) |
-   | `--bettingMode` | string | fixed | Bet sizing strategy (`kelly` or `fixed`) |
-   | `--deckEstimation` | string | full | Deck estimation granularity (`full`, `half`, or `quarter`) |
+   | Flag | Type | Default             | Description |
+   |------|------|---------------------|-------------|
+   | `--simRuns` | int | 1000                | Number of simulation runs |
+   | `--handsPerRun` | int | 100000              | Hands per run |
+   | `--startingBankroll` | double | 25000               | Starting bankroll |
+   | `--tableMin` | double | 25                  | Table minimum bet |
+   | `--tableMax` | double | 3000                | Table maximum bet |
+   | `--deckPen` | double | 1.5                 | Deck penetration (decks cut off before reshuffle) |
+   | `--gameMode` | string | H17                 | Dealer soft-17 rule (`S17` or `H17`) |
+   | `--bettingMode` | string | fixed               | Bet sizing strategy (`kelly` or `fixed`) |
+   | `--deckEstimation` | string | full                | Deck estimation granularity (`full`, `half`, or `quarter`) |
    | `--ramp` | string | 1,2x2,6x2,10x2,12x2 | Comma-separated bet ramp in units per TC level starting at `rampStart`. Append `xN` to play N hands at that level (e.g. `1,2x2,6x2,10x2,12x2`). |
-   | `--rampStart` | int | 1 | True count where the ramp begins. TCs below this value bet table minimum with 1 hand. |
+   | `--rampStart` | int | 1                   | True count where the ramp begins. TCs below this value bet table minimum with 1 hand. |
 
    **Example:**
    ```bash
