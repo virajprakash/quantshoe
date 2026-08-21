@@ -6,16 +6,18 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
     private final int spreadRatio;
     private final int[] ramp;
     private final int[] handsPerLevel;
+    private final int startTC;
 
     /** Default CVCX-matched ramp: 1-2-6-10-12 units at TC +1/+2/+3/+4/+5+. */
     private static final int[] DEFAULT_RAMP = {1, 2, 6, 10, 12};
     private static final int[] DEFAULT_HANDS = {1, 1, 1, 1, 1};
+    private static final int DEFAULT_START_TC = 1;
 
     /**
      * Creates a fixed bet spread with the default 1-2-6-10-12 ramp (single hand at every level).
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax) {
-        this(tableMin, tableMax, DEFAULT_RAMP, DEFAULT_HANDS);
+        this(tableMin, tableMax, DEFAULT_RAMP, DEFAULT_HANDS, DEFAULT_START_TC);
     }
 
     /**
@@ -23,7 +25,7 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
      * at or above a threshold, using the default ramp.
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax, int multiHandThreshold, int multiHandCount) {
-        this(tableMin, tableMax, multiHandThreshold, multiHandCount, DEFAULT_RAMP);
+        this(tableMin, tableMax, multiHandThreshold, multiHandCount, DEFAULT_RAMP, DEFAULT_START_TC);
     }
 
     /**
@@ -31,6 +33,10 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
      * Multi-hand count is applied at every TC level >= multiHandThreshold.
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax, int multiHandThreshold, int multiHandCount, int[] ramp) {
+        this(tableMin, tableMax, multiHandThreshold, multiHandCount, ramp, DEFAULT_START_TC);
+    }
+
+    public FixedSpreadBettingEngine(double tableMin, double tableMax, int multiHandThreshold, int multiHandCount, int[] ramp, int startTC) {
         if (ramp == null || ramp.length == 0) {
             throw new IllegalArgumentException("Ramp must contain at least one entry.");
         }
@@ -38,10 +44,11 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
         this.tableMax = tableMax;
         this.spreadRatio = (int) Math.round(tableMax / tableMin);
         this.ramp = ramp.clone();
+        this.startTC = startTC;
         // Build per-level hands array from threshold/count
         this.handsPerLevel = new int[ramp.length];
         for (int i = 0; i < ramp.length; i++) {
-            int tc = i + 1; // ramp index 0 = TC +1
+            int tc = startTC + i;
             this.handsPerLevel[i] = (tc >= multiHandThreshold) ? multiHandCount : 1;
         }
     }
@@ -55,6 +62,10 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
      * @param handsPerLevel Number of hands to play at each TC level (same length as ramp).
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax, int[] ramp, int[] handsPerLevel) {
+        this(tableMin, tableMax, ramp, handsPerLevel, DEFAULT_START_TC);
+    }
+
+    public FixedSpreadBettingEngine(double tableMin, double tableMax, int[] ramp, int[] handsPerLevel, int startTC) {
         if (ramp == null || ramp.length == 0) {
             throw new IllegalArgumentException("Ramp must contain at least one entry.");
         }
@@ -66,22 +77,21 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
         this.spreadRatio = (int) Math.round(tableMax / tableMin);
         this.ramp = ramp.clone();
         this.handsPerLevel = handsPerLevel.clone();
+        this.startTC = startTC;
     }
 
     @Override
     public double calculateOptimalWager(double trueCount, double currentBankroll) {
-        // TC <= +1 always bets 1 unit (ramp[0])
-        if (trueCount < 2) return Math.min(tableMin * ramp[0], tableMax);
-        // Walk the ramp for TC +2, +3, ... up to the last entry
-        int index = (int) trueCount - 1; // TC +2 → index 1, TC +3 → index 2, etc.
+        int index = (int) trueCount - startTC;
+        if (index < 0) return tableMin;
         if (index >= ramp.length) index = ramp.length - 1;
         return Math.min(tableMin * ramp[index], tableMax);
     }
 
     @Override
     public int getNumHands(double trueCount) {
-        if (trueCount < 1) return 1;
-        int index = (int) trueCount - 1;
+        int index = (int) trueCount - startTC;
+        if (index < 0) return 1;
         if (index >= handsPerLevel.length) index = handsPerLevel.length - 1;
         return handsPerLevel[index];
     }

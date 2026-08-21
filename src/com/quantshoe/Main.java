@@ -25,7 +25,7 @@ public final class Main {
 
         double startingBankroll = 25000;
         double tableMin = 25;
-        double tableMax = 3000;
+        double tableMax = 300;
         double deckPenetration = 1.5;
 
         boolean lateSurrenderAllowed = true;
@@ -34,7 +34,8 @@ public final class Main {
         String gameMode = "H17";
         String bettingMode = "fixed";
         String deckEstimationMode = "full";
-        String rampStr = "1,2x1,6x1,10x1,12x1";
+        String rampStr = "1,2,6,10,12";
+        int rampStart = 1;
         String outputFilePath = "quant_blackjack_results.csv";
 
         // Parse command-line arguments
@@ -70,6 +71,9 @@ public final class Main {
                 case "--ramp":
                     rampStr = args[++i];
                     break;
+                case "--rampStart":
+                    rampStart = Integer.parseInt(args[++i]);
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println("Usage: java com.quantshoe.Main [options]");
@@ -83,6 +87,7 @@ public final class Main {
                     System.err.println("  --bettingMode <kelly|fixed> Bet sizing strategy (default: fixed)");
                     System.err.println("  --deckEstimation <full|half|quarter> Deck estimation granularity (default: full)");
                     System.err.println("  --ramp <units>             Comma-separated bet ramp in units (default: 1,2x2,6x2,10x2,12x2)");
+                    System.err.println("  --rampStart <int>          True count where the ramp begins (default: 1)");
                     System.exit(1);
             }
         }
@@ -117,7 +122,7 @@ public final class Main {
             bettingStrategy = new KellyBettingEngine();
             System.out.println("Betting Mode: Half-Kelly Criterion");
         } else {
-            bettingStrategy = new FixedSpreadBettingEngine(tableMin, tableMax, ramp, handsPerLevel);
+            bettingStrategy = new FixedSpreadBettingEngine(tableMin, tableMax, ramp, handsPerLevel, rampStart);
             System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + "), Ramp: " + rampStr);
         }
 
