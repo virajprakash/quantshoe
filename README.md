@@ -1,6 +1,6 @@
 # QuantShoe-Sim: Multithreaded Blackjack Monte Carlo Simulator
 
-A high-performance blackjack simulation engine written in Java. It runs millions of hands across parallel threads to evaluate Hi-Lo card-counting strategies under realistic casino conditions, measuring expected value, max drawdown, and risk of ruin.
+A high-performance blackjack simulation engine written in Java. It can run billions of hands across parallel threads to evaluate Hi-Lo card-counting strategies under realistic casino conditions, measuring expected value, max drawdown, and risk of ruin.
 
 ## 📁 Project Structure
 * `com.quantshoe` — Entry point and simulation orchestrator (`Main`).
@@ -14,7 +14,7 @@ A high-performance blackjack simulation engine written in Java. It runs millions
 * **Constant-time strategy lookups:** Playing decisions are pre-compiled into static multidimensional arrays, giving O(1) access for every hand/dealer combination.
 * **Count-based playing deviations:** Overrides basic strategy in real time based on the true count, including surrender index plays (e.g., surrender 16 vs 9 above −1, stand 15 vs 10 above +4).
 * **Two betting modes:**
-  * **Half-Kelly Criterion** — sizes wagers from estimated edge and current bankroll to balance growth against drawdown risk.
+  * **Half-Kelly Criterion** — (Experimental) sizes wagers from estimated edge and current bankroll to balance growth against drawdown risk.
   * **Fixed spread (CVCX-matched)** — ramps bets from table minimum to maximum on a 1-2-6-10-12 unit schedule keyed to the true count.
 * **Multi-hand play:** At high true counts the fixed spread engine automatically spreads to two hands to increase hourly EV.
 * **Configurable rule sets:** Supports H17/S17 dealer rules, late surrender, resplit aces, and adjustable deck penetration.
@@ -22,10 +22,14 @@ A high-performance blackjack simulation engine written in Java. It runs millions
 
 ## 🚀 How to Run
 1. Clone this repository.
-2. Open in IntelliJ IDEA (JUnit 5 standalone JAR is included under `lib/`).
-3. Build and run with optional command-line arguments to override defaults:
+2. Make sure you have **Java 17+** installed (`java -version` to check).
+3. Compile the source files:
+   ```bash
+   javac -d out/production/QuantShoe-Sim $(find src -name "*.java")
    ```
-   java com.quantshoe.Main [options]
+4. Run with optional command-line arguments to override defaults:
+   ```bash
+   java -cp out/production/QuantShoe-Sim com.quantshoe.Main [options]
    ```
    | Flag | Type | Default | Description |
    |------|------|---------|-------------|
@@ -43,8 +47,8 @@ A high-performance blackjack simulation engine written in Java. It runs millions
    java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode kelly
    ```
    All flags are optional — omitted flags use their default values.
-4. Results print to the console and export to `quant_blackjack_results.csv`.
-5. *(Optional)* Run `python visualize_results.py` to generate plots from the CSV output.
+5. Results print to the console and export to `quant_blackjack_results.csv`.
+6. *(Optional)* Run `python visualize_results.py` to generate plots from the CSV output.
 
 ## 📊 Sample Output
 ```text
