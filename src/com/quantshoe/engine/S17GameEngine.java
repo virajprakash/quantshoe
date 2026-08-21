@@ -1,5 +1,6 @@
 package com.quantshoe.engine;
 
+import com.quantshoe.core.DeckEstimation;
 import com.quantshoe.strategy.StrategyAction;
 
 /**
@@ -213,10 +214,14 @@ public final class S17GameEngine extends GameEngine {
     }
 
     public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, false);
+        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, false, DeckEstimation.FULL);
     }
 
     public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
-        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, false);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, DeckEstimation.FULL);
+    }
+
+    public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, DeckEstimation deckEstimation) {
+        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, false, deckEstimation);
     }
 }

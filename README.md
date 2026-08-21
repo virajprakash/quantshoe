@@ -41,10 +41,11 @@ A high-performance blackjack simulation engine written in Java. It can run billi
    | `--deckPen` | double | 1.5 | Deck penetration (decks cut off before reshuffle) |
    | `--gameMode` | string | S17 | Dealer soft-17 rule (`S17` or `H17`) |
    | `--bettingMode` | string | fixed | Bet sizing strategy (`kelly` or `fixed`) |
+   | `--deckEstimation` | string | full | Deck estimation granularity (`full`, `half`, or `quarter`) |
 
    **Example:**
    ```bash
-   java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode kelly
+   java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode kelly --deckEstimation half
    ```
    All flags are optional — omitted flags use their default values.
 5. Results print to the console and export to `quant_blackjack_results.csv`.

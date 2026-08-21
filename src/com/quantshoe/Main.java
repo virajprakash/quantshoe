@@ -1,4 +1,5 @@
 package com.quantshoe;
+import com.quantshoe.core.DeckEstimation;
 import com.quantshoe.pipeline.DataExporter;
 import com.quantshoe.pipeline.SimulationResult;
 import com.quantshoe.pipeline.SimulationWorker;
@@ -22,16 +23,17 @@ public final class Main {
         int handsPerRun = 100_000;
         int totalDecks = 6;
 
-        double startingBankroll = 15000;
+        double startingBankroll = 10000;
         double tableMin = 25;
         double tableMax = 3000;
-        double deckPenetration = 1.5;
+        double deckPenetration = 1;
 
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
 
         String gameMode = "S17";
         String bettingMode = "fixed";
+        String deckEstimationMode = "full";
         String outputFilePath = "quant_blackjack_results.csv";
 
         // Parse command-line arguments
@@ -61,6 +63,9 @@ public final class Main {
                 case "--bettingMode":
                     bettingMode = args[++i];
                     break;
+                case "--deckEstimation":
+                    deckEstimationMode = args[++i];
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println("Usage: java com.quantshoe.Main [options]");
@@ -72,6 +77,7 @@ public final class Main {
                     System.err.println("  --deckPen <double>         Deck penetration (default: 1.5)");
                     System.err.println("  --gameMode <S17|H17>       Dealer soft-17 rule (default: S17)");
                     System.err.println("  --bettingMode <kelly|fixed> Bet sizing strategy (default: fixed)");
+                    System.err.println("  --deckEstimation <full|half|quarter> Deck estimation granularity (default: full)");
                     System.exit(1);
             }
         }
@@ -94,15 +100,30 @@ public final class Main {
             System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + ")");
         }
 
+        // 3b. Resolve deck estimation
+        DeckEstimation deckEstimation;
+        switch (deckEstimationMode.toLowerCase()) {
+            case "half":
+                deckEstimation = DeckEstimation.HALF;
+                break;
+            case "quarter":
+                deckEstimation = DeckEstimation.QUARTER;
+                break;
+            default:
+                deckEstimation = DeckEstimation.FULL;
+                break;
+        }
+
         System.out.println("Game Engine: " + (gameMode.equalsIgnoreCase("s17") ? "S17 (Stand on Soft 17)" : "H17 (Hit on Soft 17)"));
+        System.out.println("Deck Estimation: " + deckEstimation.name().charAt(0) + deckEstimation.name().substring(1).toLowerCase() + " deck (rounding to nearest " + deckEstimation.getRoundingUnit() + " deck)");
 
         // 4. Create simulation tasks
         for (int i = 0; i < simulationRuns; i++) {
             GameEngine engine;
             if (gameMode.equalsIgnoreCase("s17")) {
-                engine = new S17GameEngine(totalDecks, startingBankroll, tableMin, tableMax);
+                engine = new S17GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, deckEstimation);
             } else {
-                engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed);
+                engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, true, deckEstimation);
             }
             tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy, engine));
         }

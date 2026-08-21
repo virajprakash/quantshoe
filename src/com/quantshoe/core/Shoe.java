@@ -5,16 +5,22 @@ import java.util.Random;
 public final class Shoe {
     private final Card[] cards;
     private final int totalDecks;
+    private final DeckEstimation deckEstimation;
     private final Random random;
 
     private int topCardIndex;
     private int runningCount;
 
     public Shoe(int totalDecks) {
+        this(totalDecks, DeckEstimation.FULL);
+    }
+
+    public Shoe(int totalDecks, DeckEstimation deckEstimation) {
         if (totalDecks <= 0) {
             throw new IllegalArgumentException("Shoe must contain at least 1 deck.");
         }
         this.totalDecks = totalDecks;
+        this.deckEstimation = deckEstimation;
         this.cards = new Card[totalDecks * 52];
         this.random = new Random();
 
@@ -75,8 +81,13 @@ public final class Shoe {
     public double getTrueCount() {
         int cardsRemaining = cards.length - topCardIndex;
 
-        // Full Deck Estimation
-        double decksRemaining = Math.round(cardsRemaining / 52.0);
+        double exactDecksRemaining = cardsRemaining / 52.0;
+        double unit = deckEstimation.getRoundingUnit();
+        // Floor to the nearest unit — models a player eyeballing the discard tray
+        // and rounding up the remaining decks (conservative estimate).
+        // With full-deck estimation this systematically underestimates TC,
+        // while quarter-deck estimation stays close to the true value.
+        double decksRemaining = Math.ceil(exactDecksRemaining / unit) * unit;
 
         // Floor the minimum decks remaining to 0.5 to mitigate extreme edge spikes at the cut card
         return this.runningCount / Math.max(decksRemaining, 0.5);

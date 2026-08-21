@@ -1,5 +1,6 @@
 package com.quantshoe.engine;
 
+import com.quantshoe.core.DeckEstimation;
 import com.quantshoe.core.Shoe;
 import com.quantshoe.strategy.StrategyAction;
 
@@ -256,15 +257,19 @@ public class GameEngine {
     protected final boolean dealerHitsSoft17;
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, true);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, true, DeckEstimation.FULL);
     }
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true, DeckEstimation.FULL);
     }
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17) {
-        this.shoe = new Shoe(totalDecks);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, dealerHitsSoft17, DeckEstimation.FULL);
+    }
+
+    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17, DeckEstimation deckEstimation) {
+        this.shoe = new Shoe(totalDecks, deckEstimation);
         this.currentBankroll = startingBankroll;
         this.tableMinBet = tableMinBet;
         this.tableMaxBet = tableMaxBet;
