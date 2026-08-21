@@ -55,6 +55,7 @@ git clone https://github.com/virajprakash/quantshoe.git
    All flags are optional — omitted flags use their default values.
 5. Results print to the console and export to `quant_blackjack_results.csv`.
 6. *(Optional)* Run `python visualize_results.py` to generate plots from the CSV output.
+![Sample data visualization of output](simulation_analysis.png)
 
 ## 📊 Sample Output
 ```text
