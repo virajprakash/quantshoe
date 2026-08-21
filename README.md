@@ -22,6 +22,9 @@ A high-performance blackjack simulation engine written in Java. It can run billi
 
 ## 🚀 How to Run
 1. Clone this repository.
+```
+git clone https://github.com/virajprakash/quantshoe.git
+```
 2. Make sure you have **Java 17+** installed (`java -version` to check).
 3. Compile the source files:
    ```bash
