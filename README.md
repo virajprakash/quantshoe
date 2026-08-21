@@ -45,11 +45,11 @@ git clone https://github.com/virajprakash/quantshoe.git
    | `--gameMode` | string | S17 | Dealer soft-17 rule (`S17` or `H17`) |
    | `--bettingMode` | string | fixed | Bet sizing strategy (`kelly` or `fixed`) |
    | `--deckEstimation` | string | full | Deck estimation granularity (`full`, `half`, or `quarter`) |
-   | `--ramp` | string | 1,2,6,10,12 | Comma-separated bet ramp in units per TC level starting at TC +1 |
+   | `--ramp` | string | 1,2x2,6x2,10x2,12x2 | Comma-separated bet ramp in units per TC level starting at TC +1. Append `xN` to play N hands at that level (e.g. `1,2x2,6x2,10x2,12x2`). |
 
    **Example:**
    ```bash
-   java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode kelly --deckEstimation half --ramp 1,2,4,8,12
+   java com.quantshoe.Main --simRuns 500 --handsPerRun 200000 --startingBankroll 20000 --tableMin 50 --tableMax 5000 --deckPen 1.0 --gameMode H17 --bettingMode fixed --deckEstimation half --ramp 1,2x2,6x2,10x2,12x2
    ```
    All flags are optional — omitted flags use their default values.
 5. Results print to the console and export to `quant_blackjack_results.csv`.

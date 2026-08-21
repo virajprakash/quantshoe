@@ -81,13 +81,16 @@ public final class Shoe {
     public double getTrueCount() {
         int cardsRemaining = cards.length - topCardIndex;
 
-        double exactDecksRemaining = cardsRemaining / 52.0;
+        int totalCards = totalDecks * 52;
+        int cardsDealt = totalCards - cardsRemaining;
+        double exactDecksDealt = cardsDealt / 52.0;
         double unit = deckEstimation.getRoundingUnit();
-        // Floor to the nearest unit — models a player eyeballing the discard tray
-        // and rounding up the remaining decks (conservative estimate).
-        // With full-deck estimation this systematically underestimates TC,
-        // while quarter-deck estimation stays close to the true value.
-        double decksRemaining = Math.ceil(exactDecksRemaining / unit) * unit;
+        // Player estimates decks dealt by rounding the discard tray to the nearest unit,
+        // then subtracts from total decks to get remaining. Coarser estimation (full deck)
+        // introduces more rounding error in both directions, while finer estimation
+        // (quarter deck) stays closer to the true value — matching CVCX/BJA Pro behavior.
+        double estimatedDecksDealt = Math.round(exactDecksDealt / unit) * unit;
+        double decksRemaining = totalDecks - estimatedDecksDealt;
 
         // Floor the minimum decks remaining to 0.5 to mitigate extreme edge spikes at the cut card
         return this.runningCount / Math.max(decksRemaining, 0.5);

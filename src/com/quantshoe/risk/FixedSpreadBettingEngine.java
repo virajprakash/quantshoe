@@ -4,44 +4,31 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
     private final double tableMin;
     private final double tableMax;
     private final int spreadRatio;
-    private final int multiHandThreshold;
-    private final int multiHandCount;
     private final int[] ramp;
+    private final int[] handsPerLevel;
 
     /** Default CVCX-matched ramp: 1-2-6-10-12 units at TC +1/+2/+3/+4/+5+. */
     private static final int[] DEFAULT_RAMP = {1, 2, 6, 10, 12};
+    private static final int[] DEFAULT_HANDS = {1, 1, 1, 1, 1};
 
     /**
-     * Creates a fixed bet spread with the default 1-2-6-10-12 ramp.
-     *
-     * @param tableMin The minimum bet (1 unit).
-     * @param tableMax The maximum bet (top of the spread).
+     * Creates a fixed bet spread with the default 1-2-6-10-12 ramp (single hand at every level).
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax) {
-        this(tableMin, tableMax, 2, 2, DEFAULT_RAMP);
+        this(tableMin, tableMax, DEFAULT_RAMP, DEFAULT_HANDS);
     }
 
     /**
-     * Creates a fixed bet spread with configurable multi-hand settings and the default ramp.
-     *
-     * @param tableMin          The minimum bet (1 unit).
-     * @param tableMax          The maximum bet (top of the spread).
-     * @param multiHandThreshold The true count at or above which multiple hands are played.
-     * @param multiHandCount     The number of hands to play when the threshold is met.
+     * Creates a fixed bet spread with configurable multi-hand settings applied uniformly
+     * at or above a threshold, using the default ramp.
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax, int multiHandThreshold, int multiHandCount) {
         this(tableMin, tableMax, multiHandThreshold, multiHandCount, DEFAULT_RAMP);
     }
 
     /**
-     * Creates a fixed bet spread with fully configurable ramp and multi-hand settings.
-     *
-     * @param tableMin          The minimum bet (1 unit).
-     * @param tableMax          The maximum bet (top of the spread).
-     * @param multiHandThreshold The true count at or above which multiple hands are played.
-     * @param multiHandCount     The number of hands to play when the threshold is met.
-     * @param ramp              Unit multipliers for each TC level starting at TC +1.
-     *                          E.g. {1, 2, 6, 10, 12} means TC+1=1u, TC+2=2u, TC+3=6u, TC+4=10u, TC+5+=12u.
+     * Creates a fixed bet spread with a configurable ramp and uniform multi-hand settings.
+     * Multi-hand count is applied at every TC level >= multiHandThreshold.
      */
     public FixedSpreadBettingEngine(double tableMin, double tableMax, int multiHandThreshold, int multiHandCount, int[] ramp) {
         if (ramp == null || ramp.length == 0) {
@@ -50,9 +37,35 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
         this.tableMin = tableMin;
         this.tableMax = tableMax;
         this.spreadRatio = (int) Math.round(tableMax / tableMin);
-        this.multiHandThreshold = multiHandThreshold;
-        this.multiHandCount = multiHandCount;
         this.ramp = ramp.clone();
+        // Build per-level hands array from threshold/count
+        this.handsPerLevel = new int[ramp.length];
+        for (int i = 0; i < ramp.length; i++) {
+            int tc = i + 1; // ramp index 0 = TC +1
+            this.handsPerLevel[i] = (tc >= multiHandThreshold) ? multiHandCount : 1;
+        }
+    }
+
+    /**
+     * Creates a fixed bet spread with fully configurable per-level ramp and hand counts.
+     *
+     * @param tableMin      The minimum bet (1 unit).
+     * @param tableMax      The maximum bet (top of the spread).
+     * @param ramp          Unit multipliers for each TC level starting at TC +1.
+     * @param handsPerLevel Number of hands to play at each TC level (same length as ramp).
+     */
+    public FixedSpreadBettingEngine(double tableMin, double tableMax, int[] ramp, int[] handsPerLevel) {
+        if (ramp == null || ramp.length == 0) {
+            throw new IllegalArgumentException("Ramp must contain at least one entry.");
+        }
+        if (handsPerLevel == null || handsPerLevel.length != ramp.length) {
+            throw new IllegalArgumentException("handsPerLevel must have the same length as ramp.");
+        }
+        this.tableMin = tableMin;
+        this.tableMax = tableMax;
+        this.spreadRatio = (int) Math.round(tableMax / tableMin);
+        this.ramp = ramp.clone();
+        this.handsPerLevel = handsPerLevel.clone();
     }
 
     @Override
@@ -67,7 +80,10 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
 
     @Override
     public int getNumHands(double trueCount) {
-        return trueCount >= multiHandThreshold ? multiHandCount : 1;
+        if (trueCount < 1) return 1;
+        int index = (int) trueCount - 1;
+        if (index >= handsPerLevel.length) index = handsPerLevel.length - 1;
+        return handsPerLevel[index];
     }
 
     public double getTableMin() { return tableMin; }
