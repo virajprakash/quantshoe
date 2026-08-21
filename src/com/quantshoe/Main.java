@@ -26,7 +26,7 @@ public final class Main {
         double startingBankroll = 10000;
         double tableMin = 25;
         double tableMax = 3000;
-        double deckPenetration = 1;
+        double deckPenetration = 1.5;
 
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
@@ -34,6 +34,7 @@ public final class Main {
         String gameMode = "S17";
         String bettingMode = "fixed";
         String deckEstimationMode = "full";
+        String rampStr = "1,2,6,10,12";
         String outputFilePath = "quant_blackjack_results.csv";
 
         // Parse command-line arguments
@@ -66,6 +67,9 @@ public final class Main {
                 case "--deckEstimation":
                     deckEstimationMode = args[++i];
                     break;
+                case "--ramp":
+                    rampStr = args[++i];
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println("Usage: java com.quantshoe.Main [options]");
@@ -78,6 +82,7 @@ public final class Main {
                     System.err.println("  --gameMode <S17|H17>       Dealer soft-17 rule (default: S17)");
                     System.err.println("  --bettingMode <kelly|fixed> Bet sizing strategy (default: fixed)");
                     System.err.println("  --deckEstimation <full|half|quarter> Deck estimation granularity (default: full)");
+                    System.err.println("  --ramp <units>             Comma-separated bet ramp in units (default: 1,2,6,10,12)");
                     System.exit(1);
             }
         }
@@ -91,13 +96,20 @@ public final class Main {
         List<SimulationWorker> tasks = new ArrayList<>();
 
         // 3. Create betting strategy
+        // Parse ramp
+        String[] rampParts = rampStr.split(",");
+        int[] ramp = new int[rampParts.length];
+        for (int i = 0; i < rampParts.length; i++) {
+            ramp[i] = Integer.parseInt(rampParts[i].trim());
+        }
+
         BettingStrategy bettingStrategy;
         if (bettingMode.equals("kelly")) {
             bettingStrategy = new KellyBettingEngine();
             System.out.println("Betting Mode: Half-Kelly Criterion");
         } else {
-            bettingStrategy = new FixedSpreadBettingEngine(tableMin, tableMax);
-            System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + ")");
+            bettingStrategy = new FixedSpreadBettingEngine(tableMin, tableMax, 2, 2, ramp);
+            System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + "), Ramp: " + rampStr);
         }
 
         // 3b. Resolve deck estimation
