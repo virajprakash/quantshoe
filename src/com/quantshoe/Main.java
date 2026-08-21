@@ -2,6 +2,8 @@ package com.quantshoe;
 import com.quantshoe.pipeline.DataExporter;
 import com.quantshoe.pipeline.SimulationResult;
 import com.quantshoe.pipeline.SimulationWorker;
+import com.quantshoe.engine.GameEngine;
+import com.quantshoe.engine.S17GameEngine;
 import com.quantshoe.risk.BettingStrategy;
 import com.quantshoe.risk.FixedSpreadBettingEngine;
 import com.quantshoe.risk.KellyBettingEngine;
@@ -20,7 +22,7 @@ public final class Main {
         int handsPerRun = 100_000;         // Hands per run
         int totalDecks = 6;                // Decks in the shoe
 
-        double startingBankroll = 25000; // Starting bankroll
+        double startingBankroll = 10000; // Starting bankroll
         double tableMin = 25;             // Table minimum bet
         double tableMax = 3000;           // Table maximum bet (1-12 spread: $15 x 12)
         double deckPenetration = 1.5;
@@ -28,6 +30,8 @@ public final class Main {
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
 
+        // Game engine mode: "h17" or "s17"
+        String gameMode = "S17";
 
         // Betting mode: "kelly" for Half-Kelly sizing, "fixed" for fixed spread
         String bettingMode = "fixed";
@@ -52,9 +56,17 @@ public final class Main {
             System.out.println("Betting Mode: Fixed Spread ($" + (int) tableMin + "-$" + (int) tableMax + ")");
         }
 
+        System.out.println("Game Engine: " + (gameMode.equalsIgnoreCase("s17") ? "S17 (Stand on Soft 17)" : "H17 (Hit on Soft 17)"));
+
         // 4. Create simulation tasks
         for (int i = 0; i < simulationRuns; i++) {
-            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy));
+            GameEngine engine;
+            if (gameMode.equalsIgnoreCase("s17")) {
+                engine = new S17GameEngine(totalDecks, startingBankroll, tableMin, tableMax);
+            } else {
+                engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed);
+            }
+            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy, engine));
         }
 
         System.out.println("Executing " + simulationRuns + " parallel tests ("

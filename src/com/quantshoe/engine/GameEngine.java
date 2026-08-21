@@ -1,29 +1,45 @@
 package com.quantshoe.engine;
 
-import com.quantshoe.risk.DeviationMatrix;
 import com.quantshoe.core.Shoe;
 import com.quantshoe.strategy.StrategyAction;
 
-public final class GameEngine {
+public class GameEngine {
 
     // ==========================================
 // 1. HARD TOTALS MATRIX (Indices: Player Hard Total 4-21 vs Dealer Upcard 2-11)
 // ==========================================
-    private static final StrategyAction[][] HARD_MATRIX = new StrategyAction[22][12];
+    protected final StrategyAction[][] HARD_MATRIX = new StrategyAction[22][12];
 
     // ==========================================
 // 2. SOFT TOTALS MATRIX (Indices: Player Non-Ace Card Value 2-10 vs Dealer Upcard 2-11)
 // Example: Ace + 6 is index 6. Ace + 7 is index 7.
 // ==========================================
-    private static final StrategyAction[][] SOFT_MATRIX = new StrategyAction[11][12];
+    protected final StrategyAction[][] SOFT_MATRIX = new StrategyAction[11][12];
 
     // ==========================================
 // 3. PAIR SPLITTING MATRIX (Indices: Split Card Value 2-11 vs Dealer Upcard 2-11)
 // Example: Pair of 8s is index 8. Pair of Aces is index 11.
 // ==========================================
-    private static final boolean[][] SPLIT_MATRIX = new boolean[12][12];
+    protected final boolean[][] SPLIT_MATRIX = new boolean[12][12];
 
-    static {
+    // ==========================================
+// 4. DEVIATION THRESHOLDS (Indices: [Player Total/Card][Dealer Upcard])
+// ==========================================
+    protected final double[][] DEVIATION_THRESHOLDS = new double[22][12];
+    protected final double[][] SOFT_DEVIATION_THRESHOLDS = new double[11][12];
+    protected final double[][] SPLIT_DEVIATION_THRESHOLDS = new double[12][12];
+
+    // Surrender/stand deviation indices
+    protected double SURRENDER_16_VS_8_INDEX = 4.0;
+    protected double SURRENDER_16_VS_9_INDEX = -1.0;
+    protected double STAND_16_VS_9_INDEX = 4.0;
+    protected double STAND_16_VS_ACE_INDEX = 3.0;
+    protected double SURRENDER_15_VS_ACE_INDEX = -1.0;
+    protected double STAND_15_VS_ACE_INDEX = 5.0;
+    protected double SURRENDER_15_VS_9_INDEX = 2.0;
+    protected double STAND_15_VS_10_INDEX = 4.0;
+
+    {
         // Fill every cell with a safe default action (HIT) first to avoid NullPointerExceptions
         for (int p = 0; p < 22; p++) {
             for (int d = 0; d < 12; d++) {
@@ -172,6 +188,50 @@ public final class GameEngine {
         SPLIT_MATRIX[4][6] = true;
         // Example: Never split 5s or 10s/Faces
         // (They remain false by default due to our initialization loop)
+
+        // -------------------------------------------------------------
+        // DEVIATION THRESHOLDS (H17)
+        // -------------------------------------------------------------
+        for (int p = 0; p < 22; p++) {
+            for (int d = 0; d < 12; d++) {
+                if (p < 11) SOFT_DEVIATION_THRESHOLDS[p][d] = Double.NaN;
+                DEVIATION_THRESHOLDS[p][d] = Double.NaN;
+            }
+        }
+
+        DEVIATION_THRESHOLDS[8][6] = 2.0;
+        DEVIATION_THRESHOLDS[0][11] = 3.0;
+        DEVIATION_THRESHOLDS[16][10] = 0.0;
+        DEVIATION_THRESHOLDS[15][10] = 4.0;
+        DEVIATION_THRESHOLDS[10][11] = 4.0;
+        DEVIATION_THRESHOLDS[12][2] = 3.0;
+        DEVIATION_THRESHOLDS[12][3] = 2.0;
+        DEVIATION_THRESHOLDS[12][4] = 0;
+        DEVIATION_THRESHOLDS[13][2] = -1.0;
+        DEVIATION_THRESHOLDS[13][3] = -2.0;
+        DEVIATION_THRESHOLDS[10][10] = 4.0;
+        DEVIATION_THRESHOLDS[10][11] = 3.0;
+        DEVIATION_THRESHOLDS[9][2] = 1.0;
+        DEVIATION_THRESHOLDS[9][7] = 3.0;
+
+        SOFT_DEVIATION_THRESHOLDS[6][2] = 1.0;
+        SOFT_DEVIATION_THRESHOLDS[8][4] = 3.0;
+        SOFT_DEVIATION_THRESHOLDS[8][5] = 1.0;
+        SOFT_DEVIATION_THRESHOLDS[8][6] = 0.0;
+
+        // -------------------------------------------------------------
+        // SPLIT DEVIATION THRESHOLDS (H17)
+        // -------------------------------------------------------------
+        for (int p = 0; p < 12; p++) {
+            for (int d = 0; d < 12; d++) {
+                SPLIT_DEVIATION_THRESHOLDS[p][d] = Double.NaN;
+            }
+        }
+
+        // Split 10s vs dealer 4 at TC >= 6, vs dealer 5 at TC >= 5, vs dealer 6 at TC >= 4
+        SPLIT_DEVIATION_THRESHOLDS[10][4] = 6.0;
+        SPLIT_DEVIATION_THRESHOLDS[10][5] = 5.0;
+        SPLIT_DEVIATION_THRESHOLDS[10][6] = 4.0;
     }
 
     private final Shoe shoe;
@@ -193,21 +253,27 @@ public final class GameEngine {
     private double currentBankroll;
     private final boolean allowLateSurrender;
     private final boolean allowResplitAces;
+    protected final boolean dealerHitsSoft17;
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, true);
     }
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true);
+    }
+
+    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17) {
         this.shoe = new Shoe(totalDecks);
         this.currentBankroll = startingBankroll;
         this.tableMinBet = tableMinBet;
         this.tableMaxBet = tableMaxBet;
         this.allowLateSurrender = allowLateSurrender;
         this.allowResplitAces = allowResplitAces;
+        this.dealerHitsSoft17 = dealerHitsSoft17;
     }
 
-    public double playRound(double targetBet) {
+    public double playRound(int numHands, double targetBet) {
         double baselineWager = Math.max(tableMinBet, Math.min(targetBet, tableMaxBet));
         if (baselineWager > currentBankroll) {
             baselineWager = currentBankroll;
@@ -215,14 +281,15 @@ public final class GameEngine {
 
         resetRoundState();
 
-        // Setup initial primary hand (Index 0)
-        playerHandWagers[0] = baselineWager;
-        int activePlayerHandsCount = 1;
-
-        // Deal initial cards
-        playerHands[0][playerHandCardCounts[0]++] = shoe.dealCard().getValue();
+        // Setup wagers and deal cards for all initial hands
+        int activePlayerHandsCount = numHands;
+        for (int i = 0; i < numHands; i++) {
+            playerHandWagers[i] = baselineWager;
+            // Deal initial cards
+            playerHands[i][playerHandCardCounts[i]++] = shoe.dealCard().getValue();
+            playerHands[i][playerHandCardCounts[i]++] = shoe.dealCard().getValue();
+        }
         dealerHand[dealerCardCount++] = shoe.dealCard().getValue();
-        playerHands[0][playerHandCardCounts[0]++] = shoe.dealCard().getValue();
         dealerHand[dealerCardCount++] = shoe.dealCard().getValue(); // Dealer upcard is dealerHand[0]
 
         int dealerUpcard = dealerHand[0];
@@ -354,8 +421,8 @@ public final class GameEngine {
 //                dealerHand[dealerCardCount++] = shoe.dealCard().getValue();
 //                dealerTotal = calculateHandValue(dealerHand, dealerCardCount);
 //            }
-            //H17 Environment
-            while (dealerTotal < 17 || (dealerTotal == 17 && checkIsSoftHand(dealerHand, dealerCardCount))) {
+            //H17 or S17 Environment (controlled by dealerHitsSoft17 flag)
+            while (dealerTotal < 17 || (dealerHitsSoft17 && dealerTotal == 17 && checkIsSoftHand(dealerHand, dealerCardCount))) {
                 dealerHand[dealerCardCount++] = shoe.dealCard().getValue();
                 dealerTotal = calculateHandValue(dealerHand, dealerCardCount);
             }
@@ -389,7 +456,7 @@ public final class GameEngine {
 
     public enum Decision {HIT, STAND, DOUBLE}
 
-    private boolean evaluateInsuranceMatrix(double trueCount) {
+    protected boolean evaluateInsuranceMatrix(double trueCount) {
         return trueCount >= 3.0; // Insurance is +EV at true count >= +3
     }
 
@@ -397,7 +464,7 @@ public final class GameEngine {
      * Evaluates whether the initial 2-card player hand qualifies for a baseline,
      * true-count, or running-count dependent surrender deviation.
      */
-    private boolean evaluateSurrenderMatrix(int[] initialHand, int dealerUpcard, double trueCount, int runningCount) {
+    protected boolean evaluateSurrenderMatrix(int[] initialHand, int dealerUpcard, double trueCount, int runningCount) {
         int total = initialHand[0] + initialHand[1]; // Ensure pulling from initial 2-card indices
 
         // Safety boundary constraints
@@ -410,15 +477,16 @@ public final class GameEngine {
 
         // Scenario A: Static Basic Strategy Surrender (Always Surrender)
         if (action == StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT) {
-            return true;
+            // Pair of 8's shouldn't surrender vs a 10
+            return initialHand[0] != 8 || initialHand[1] != 8;
         }
 
         if (action == StrategyAction.SURRENDER_16_VS_8_ABOVE_4) {
-            return trueCount >= DeviationMatrix.SURRENDER_16_VS_8_INDEX;
+            return trueCount >= SURRENDER_16_VS_8_INDEX;
         }
 
         if (action == StrategyAction.SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4) {
-            return trueCount >= DeviationMatrix.SURRENDER_16_VS_9_INDEX;
+            return trueCount >= SURRENDER_16_VS_9_INDEX;
         }
 
         if (action == StrategyAction.SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_3) {
@@ -430,7 +498,7 @@ public final class GameEngine {
         }
 
         if (action == StrategyAction.SURRENDER_15_VS_ACE_ABOVE_MINUS_1_ELSE_STAND_ABOVE_5) {
-            return trueCount >= DeviationMatrix.SURRENDER_15_VS_ACE_INDEX;
+            return trueCount >= SURRENDER_15_VS_ACE_INDEX;
         }
 
         if (action == StrategyAction.SURRENDER_15_VS_10_WHEN_RUNNING_NON_NEGATIVE_ELSE_STAND_ABOVE_4) {
@@ -438,11 +506,11 @@ public final class GameEngine {
         }
 
         if (action == StrategyAction.SURRENDER_15_VS_9_ABOVE_2_ELSE_HIT) {
-            return trueCount >= DeviationMatrix.SURRENDER_15_VS_9_INDEX;
+            return trueCount >= SURRENDER_15_VS_9_INDEX;
         }
 
-        // Pull assigned threshold bounds from your data map class
-        double threshold = DeviationMatrix.getHardThreshold(total, dealerUpcard);
+        // Pull assigned threshold bounds from instance deviation data
+        double threshold = DEVIATION_THRESHOLDS[total][dealerUpcard];
         if (Double.isNaN(threshold)) {
             return false; // Safe fallback if data missing
         }
@@ -466,14 +534,19 @@ public final class GameEngine {
         return false;
     }
 
-    private boolean evaluateSplitMatrix(int cardValue, int dealerUpcard, double trueCount) {
+    protected boolean evaluateSplitMatrix(int cardValue, int dealerUpcard, double trueCount) {
         if (cardValue < 2 || cardValue > 11 || dealerUpcard < 2 || dealerUpcard > 11) {
             return false;
+        }
+        // Check for split deviation: if a threshold exists, split only when TC >= threshold
+        double splitThreshold = SPLIT_DEVIATION_THRESHOLDS[cardValue][dealerUpcard];
+        if (!Double.isNaN(splitThreshold)) {
+            return trueCount >= splitThreshold;
         }
         return SPLIT_MATRIX[cardValue][dealerUpcard];
     }
 
-    private Decision evaluateMainMatrix(int[] hand, int count, int dealerUpcard, double trueCount) {
+    protected Decision evaluateMainMatrix(int[] hand, int count, int dealerUpcard, double trueCount) {
         int total = calculateHandValue(hand, count);
         if (total > 21) return Decision.STAND; // Safety catch
 
@@ -489,13 +562,13 @@ public final class GameEngine {
 
             action = SOFT_MATRIX[nonAceValue][dealerUpcard];
 
-            // ROUTING VECTOR A: Fetch exclusively from your soft threshold grid
-            threshold = DeviationMatrix.getSoftThreshold(nonAceValue, dealerUpcard);
+            // ROUTING VECTOR A: Fetch exclusively from instance soft threshold grid
+            threshold = SOFT_DEVIATION_THRESHOLDS[nonAceValue][dealerUpcard];
         } else {
             action = HARD_MATRIX[total][dealerUpcard];
 
-            // ROUTING VECTOR B: Fetch exclusively from your hard threshold grid
-            threshold = DeviationMatrix.getHardThreshold(total, dealerUpcard);
+            // ROUTING VECTOR B: Fetch exclusively from instance hard threshold grid
+            threshold = DEVIATION_THRESHOLDS[total][dealerUpcard];
         }
 
         switch (action) {
@@ -533,22 +606,22 @@ public final class GameEngine {
                 return (getShoe().getRunningCount() >= 0) ? Decision.STAND : Decision.HIT;
 
             case SURRENDER_16_VS_9_ABOVE_MINUS_1_ELSE_STAND_ABOVE_4:
-                return (trueCount >= DeviationMatrix.STAND_16_VS_9_INDEX) ? Decision.STAND : Decision.HIT;
+                return (trueCount >= STAND_16_VS_9_INDEX) ? Decision.STAND : Decision.HIT;
 
             case SURRENDER_16_VS_8_ABOVE_4:
                 return Decision.HIT;
 
             case SURRENDER_16_VS_ACE_ELSE_STAND_ABOVE_3:
-                return (trueCount >= DeviationMatrix.STAND_16_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
+                return (trueCount >= STAND_16_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
 
             case SURRENDER_OR_HIT:
                 return Decision.HIT;
 
             case SURRENDER_15_VS_ACE_ABOVE_MINUS_1_ELSE_STAND_ABOVE_5:
-                return (trueCount >= DeviationMatrix.STAND_15_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
+                return (trueCount >= STAND_15_VS_ACE_INDEX) ? Decision.STAND : Decision.HIT;
 
             case SURRENDER_15_VS_10_WHEN_RUNNING_NON_NEGATIVE_ELSE_STAND_ABOVE_4:
-                return (trueCount >= DeviationMatrix.STAND_15_VS_10_INDEX) ? Decision.STAND : Decision.HIT;
+                return (trueCount >= STAND_15_VS_10_INDEX) ? Decision.STAND : Decision.HIT;
 
             case SURRENDER_15_VS_9_ABOVE_2_ELSE_HIT:
                 return Decision.HIT;

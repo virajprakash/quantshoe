@@ -74,10 +74,12 @@ public final class Shoe {
      */
     public double getTrueCount() {
         int cardsRemaining = cards.length - topCardIndex;
-        double decksRemaining = (double) cardsRemaining / 52.0;
+
+        // Full Deck Estimation
+        double decksRemaining = Math.round(cardsRemaining / 52.0);
 
         // Floor the minimum decks remaining to 0.5 to mitigate extreme edge spikes at the cut card
-        return (double) this.runningCount / Math.max(decksRemaining, 0.5);
+        return this.runningCount / Math.max(decksRemaining, 0.5);
     }
 
     // High-utility diagnostic getters

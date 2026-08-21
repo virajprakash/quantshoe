@@ -38,6 +38,7 @@ game_rules = [
     'Re-split Aces Not Allowed',
     'No Draw to Splitted Aces',
     'Penetration: 1.5',
+    'Deck Estimation: Full'
 ]
 
 # Use a clean style

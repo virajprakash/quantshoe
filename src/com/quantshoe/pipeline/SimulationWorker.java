@@ -19,6 +19,11 @@ public final class SimulationWorker implements Callable<SimulationResult> {
     private final BettingStrategy bettingEngine;
 
     public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy) {
+        this(handsToSimulate, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy,
+                new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed));
+    }
+
+    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy, GameEngine engine) {
         this.handsToSimulate = handsToSimulate;
         this.totalDecks = totalDecks;
         this.startingBankroll = startingBankroll;
@@ -27,7 +32,7 @@ public final class SimulationWorker implements Callable<SimulationResult> {
         this.deckPenetration = deckPenetration;
         this.lateSurrenderAllowed = lateSurrenderAllowed;
         this.resplitAcesAllowed = resplitAcesAllowed;
-        this.engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed);
+        this.engine = engine;
         this.bettingEngine = bettingStrategy;
     }
 
@@ -62,18 +67,27 @@ public final class SimulationWorker implements Callable<SimulationResult> {
             }
 
             // 4. Play the hand
-            engine.playRound(wager);
-            activeHands++;
+            int numHands = bettingEngine.getNumHands(trueCount);
+            engine.playRound(numHands, wager);
+            activeHands += numHands;
 
             // 5. Track drawdown
             double updatedBankroll = engine.getCurrentBankroll();
             if (updatedBankroll > peakBankroll) {
                 peakBankroll = updatedBankroll;
+                // stop / win loss experimentation
+//                if (updatedBankroll >= startingBankroll * 2.5) {
+//                    break;
+//                }
             }
 
             double currentDrawdown = peakBankroll - updatedBankroll;
             if (currentDrawdown > maxDrawdown) {
                 maxDrawdown = currentDrawdown;
+                //stop/win loss experimentation
+//                if (currentDrawdown >= 10000) {
+//                    break;
+//                }
             }
         }
 
