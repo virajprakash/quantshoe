@@ -59,16 +59,19 @@ git clone https://github.com/virajprakash/quantshoe.git
 ```text
 System Hardware Detected: 8 physical cores available.
 Allocating Fixed Thread Pool...
-Betting Mode: Fixed Spread ($25-$3000)
-Game Engine: S17 (Stand on Soft 17)
-Executing 1000 parallel tests (100,000,000 cumulative rounds)...
-Computation complete! Processing execution time: 1420ms
+Betting Mode: Fixed Spread ($25-$3000), Ramp: 1,2x1,6x1,10x1,12x1
+Game Engine: H17 (Hit on Soft 17)
+Deck Estimation: Full deck (rounding to nearest 1.0 deck)
+Executing 1000 parallel tests (100000000 cumulative rounds)...
+Computation complete! Processing execution time: 6405ms
+Processing data export pipelines to: quant_blackjack_results.csv
+Data extraction complete! File finalized successfully.
 
 ============== SIMULATION SUMMARY ==============
 Total Runs              : 1000
-Average Net P&L         : $100912.71
-Worst-Case Max Drawdown : $49987.50
-Risk of Ruin            : 6.40%
+Average Net P&L         : $24082.87
+Worst-Case Max Drawdown : $55987.50
+Risk of Ruin            : 12.00%
 =================================================
 ```
 
@@ -77,14 +80,14 @@ The console also prints an **EV-by-rounds-per-hour table** (hourly and 8-hour se
 ========== EXPECTED VALUE BY ROUNDS PER HOUR ==========
 Rounds/Hour          EV/Hour            EV/8hr Session     Hours/Thread       8hr Sessions/Thread
 -----------------------------------------------------------------------------------------------
-50                   $47.59             $380.70            2120.6             265.1             
-60                   $57.11             $456.84            1767.1             220.9             
-70                   $66.62             $532.98            1514.7             189.3             
-80                   $76.14             $609.12            1325.3             165.7             
-100                  $95.18             $761.41            1060.3             132.5             
-120                  $114.21            $913.69            883.6              110.4             
-150                  $142.76            $1142.11           706.9              88.4              
-200                  $190.35            $1522.81           530.1              66.3              
+50                   $12.88             $103.00            1870.5             233.8             
+60                   $15.45             $123.60            1558.8             194.8             
+70                   $18.03             $144.20            1336.1             167.0             
+80                   $20.60             $164.80            1169.1             146.1             
+100                  $25.75             $206.00            935.3              116.9             
+120                  $30.90             $247.20            779.4              97.4              
+150                  $38.63             $309.00            623.5              77.9              
+200                  $51.50             $412.00            467.6              58.5     
 ===============================================================================================
 
 =================== BET SPREAD (Starting Bankroll) ===================
@@ -97,14 +100,14 @@ True Count         Wager
 -1                 $25 x 1           
 +0                 $25 x 1           
 +1                 $25 x 1           
-+2                 $50 x 2           
-+3                 $150 x 2          
-+4                 $250 x 2          
-+5                 $300 x 2          
-+6                 $300 x 2          
-+7                 $300 x 2          
-+8                 $300 x 2          
-+9                 $300 x 2          
-+10                $300 x 2                  
++2                 $50 x 1           
++3                 $150 x 1          
++4                 $250 x 1          
++5                 $300 x 1          
++6                 $300 x 1          
++7                 $300 x 1          
++8                 $300 x 1          
++9                 $300 x 1          
++10                $300 x 1                        
 ======================================================================
 ```

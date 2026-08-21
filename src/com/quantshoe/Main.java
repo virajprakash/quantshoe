@@ -31,7 +31,7 @@ public final class Main {
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
 
-        String gameMode = "S17";
+        String gameMode = "H17";
         String bettingMode = "fixed";
         String deckEstimationMode = "full";
         String rampStr = "1,2x1,6x1,10x1,12x1";
