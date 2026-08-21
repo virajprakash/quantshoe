@@ -47,6 +47,8 @@ git clone https://github.com/virajprakash/quantshoe.git
    | `--deckEstimation` | string | full                | Deck estimation granularity (`full`, `half`, or `quarter`) |
    | `--ramp` | string | 1,2x1,6x1,10x1,12x1 | Comma-separated bet ramp in units per TC level starting at `rampStart`. Append `xN` to play N hands at that level (e.g. `1,2x2,6x2,10x2,12x2`). |
    | `--rampStart` | int | 1                   | True count where the ramp begins. TCs below this value bet table minimum with 1 hand. |
+   | `--lateSurrender` | boolean | true                | Allow late surrender |
+   | `--resplitAces` | boolean | false               | Allow resplitting aces |
 
    **Example:**
    ```bash

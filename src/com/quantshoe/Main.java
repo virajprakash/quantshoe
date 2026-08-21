@@ -74,6 +74,12 @@ public final class Main {
                 case "--rampStart":
                     rampStart = Integer.parseInt(args[++i]);
                     break;
+                case "--lateSurrender":
+                    lateSurrenderAllowed = Boolean.parseBoolean(args[++i]);
+                    break;
+                case "--resplitAces":
+                    resplitAcesAllowed = Boolean.parseBoolean(args[++i]);
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println("Usage: java com.quantshoe.Main [options]");
@@ -88,6 +94,8 @@ public final class Main {
                     System.err.println("  --deckEstimation <full|half|quarter> Deck estimation granularity (default: full)");
                     System.err.println("  --ramp <units>             Comma-separated bet ramp in units (default: 1,2x2,6x2,10x2,12x2)");
                     System.err.println("  --rampStart <int>          True count where the ramp begins (default: 1)");
+                    System.err.println("  --lateSurrender <true|false> Allow late surrender (default: true)");
+                    System.err.println("  --resplitAces <true|false>  Allow resplitting aces (default: false)");
                     System.exit(1);
             }
         }
