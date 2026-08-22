@@ -26,15 +26,15 @@ public final class Main {
         double startingBankroll = 25000;
         double tableMin = 25;
         double tableMax = 300;
-        double deckPenetration = 1;
+        double deckPenetration = 1.5;
 
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
 
-        String gameMode = "S17";
+        String gameMode = "H17";
         String bettingMode = "fixed";
         String deckEstimationMode = "quarter";
-        String rampStr = "1,2x2,6x2,10x2,12x2";
+        String rampStr = "1,2,6,10,12";
         int rampStart = 1;
         String outputFilePath = "quant_blackjack_results.csv";
 
