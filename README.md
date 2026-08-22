@@ -16,7 +16,7 @@ A high-performance blackjack simulation engine written in Java. It can run billi
 * **Two betting modes:**
   * **Half-Kelly Criterion** — (Experimental) sizes wagers from estimated edge and current bankroll to balance growth against drawdown risk.
   * **Fixed spread (Recommended)** — ramps bets on a 100% configurable unit schedule keyed to the true count.
-* **Multi-hand play:** At high true counts the fixed spread engine automatically spreads to two hands to increase hourly EV.
+* **Multi-hand play:** Bet ramps can be configured to spread to two or more hands to increase hourly EV at any true counts desired.
 * **Configurable rule sets:** Supports H17/S17 dealer rules, late surrender, resplit aces, and adjustable deck penetration.
 * **Thread-parallel simulation:** Uses a fixed-size `ExecutorService` thread pool to distribute simulation runs across all available CPU cores.
 
