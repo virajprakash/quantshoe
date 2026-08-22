@@ -56,7 +56,22 @@ git clone https://github.com/virajprakash/quantshoe.git
    ```
    All flags are optional — omitted flags use their default values.
 5. Results print to the console and export to `quant_blackjack_results.csv`.
-6. *(Optional)* Run `python visualize_results.py` to generate plots from the CSV output.
+6. *(Optional)* To generate plots from the CSV output, install Python and the required libraries, then run the visualization script:
+   1. Install **Python 3.8+** from [python.org/downloads](https://www.python.org/downloads/). During installation on Windows, **check "Add Python to PATH"**.
+   2. Verify the installation:
+      ```bash
+      python --version
+      ```
+      On macOS/Linux you may need to use `python3` instead of `python`.
+   3. Install the required libraries:
+      ```bash
+      pip install numpy pandas matplotlib
+      ```
+      On macOS/Linux you may need to use `pip3` instead of `pip`.
+   4. Run the visualization script:
+      ```bash
+      python visualize_results.py
+      ```
 ![Sample data visualization of output](simulation_analysis.png)
 
 ## 📊 Sample Output
