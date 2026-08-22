@@ -3,7 +3,7 @@
 *.iml
 out/
 gen/
-
+.DS_Store
 # Compiled Java class binaries (never upload these to GitHub)
 *.class
 
