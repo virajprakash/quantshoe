@@ -80,20 +80,20 @@ public final class Shoe {
      */
     public double getTrueCount() {
         int cardsRemaining = cards.length - topCardIndex;
-
-        int totalCards = totalDecks * 52;
-        int cardsDealt = totalCards - cardsRemaining;
-        double exactDecksDealt = cardsDealt / 52.0;
+        double exactDecksRemaining = cardsRemaining / 52.0;
         double unit = deckEstimation.getRoundingUnit();
-        // Player estimates decks dealt by rounding the discard tray to the nearest unit,
-        // then subtracts from total decks to get remaining. Coarser estimation (full deck)
-        // introduces more rounding error in both directions, while finer estimation
-        // (quarter deck) stays closer to the true value — matching CVCX/BJA Pro behavior.
-        double estimatedDecksDealt = Math.round(exactDecksDealt / unit) * unit;
-        double decksRemaining = totalDecks - estimatedDecksDealt;
+        // Player estimates decks remaining by eyeballing the shoe and rounding to the
+        // nearest unit. Rounding the remaining decks directly (rather than rounding decks
+        // dealt and subtracting) avoids a Jensen's inequality bias where coarser estimation
+        // systematically inflates TC due to the convexity of 1/x. This matches CVCX/BJA Pro
+        // behavior: finer estimation → more accurate TC → better-correlated decisions → higher EV.
+        double estimatedDecksRemaining = Math.ceil(exactDecksRemaining / unit) * unit;
 
-        // Floor the minimum decks remaining to 0.5 to mitigate extreme edge spikes at the cut card
-        return this.runningCount / Math.max(decksRemaining, 0.5);
+        // Clamp minimum to the rounding unit so that coarser estimation (e.g., full-deck)
+        // cannot round down to zero and produce artificially extreme TC spikes via the floor.
+        // A player estimating in full decks would never say "zero decks remain" — they'd say "one deck".
+        double minDecks = Math.max(unit, 0.5);
+        return this.runningCount / Math.max(estimatedDecksRemaining, minDecks);
     }
 
     // High-utility diagnostic getters

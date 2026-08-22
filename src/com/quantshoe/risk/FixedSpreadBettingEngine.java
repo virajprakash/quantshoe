@@ -82,7 +82,7 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
 
     @Override
     public double calculateOptimalWager(double trueCount, double currentBankroll) {
-        int index = (int) Math.round(trueCount) - startTC;
+        int index = (int) trueCount - startTC;
         if (index < 0) return tableMin;
         if (index >= ramp.length) index = ramp.length - 1;
         return Math.min(tableMin * ramp[index], tableMax);
@@ -90,7 +90,7 @@ public final class FixedSpreadBettingEngine implements BettingStrategy {
 
     @Override
     public int getNumHands(double trueCount) {
-        int index = (int) trueCount - startTC;
+        int index = (int) Math.floor(trueCount) - startTC;
         if (index < 0) return 1;
         if (index >= handsPerLevel.length) index = handsPerLevel.length - 1;
         return handsPerLevel[index];
