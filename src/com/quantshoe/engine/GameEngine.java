@@ -280,8 +280,17 @@ public class GameEngine {
 
     public double playRound(int numHands, double targetBet) {
         double baselineWager = Math.max(tableMinBet, Math.min(targetBet, tableMaxBet));
-        if (baselineWager > currentBankroll) {
-            baselineWager = currentBankroll;
+        // Ensure total exposure across all hands doesn't exceed bankroll
+        if (baselineWager * numHands > currentBankroll) {
+            baselineWager = Math.floor(currentBankroll / numHands);
+            if (baselineWager < tableMinBet) {
+                // Can't afford multiple hands at table min — reduce to as many hands as possible
+                numHands = Math.max(1, (int) (currentBankroll / tableMinBet));
+                baselineWager = tableMinBet;
+            }
+            if (baselineWager > currentBankroll) {
+                baselineWager = currentBankroll;
+            }
         }
 
         resetRoundState();
@@ -308,7 +317,7 @@ public class GameEngine {
                 if (dealerTotal == 21) {
                     currentBankroll += (insuranceBet * 2.0); // Insurance pays 2:1
                 } else {
-                    currentBankroll -= insuranceBet;
+                    currentBankroll = Math.max(0, currentBankroll - insuranceBet);
                 }
             }
         }
@@ -323,7 +332,7 @@ public class GameEngine {
         // 2. Surrender check (initial 2-card hand only)
         if (allowLateSurrender && evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
             playerHandSurrendered[0] = true;
-            currentBankroll -= (baselineWager * 0.5);
+            currentBankroll = Math.max(0, currentBankroll - (baselineWager * 0.5));
             return -(baselineWager * 0.5);
         }
 
@@ -367,7 +376,7 @@ public class GameEngine {
             if (playerHandFromSplitAces[h]) {
                 if (calculateHandValue(playerHands[h], playerHandCardCounts[h]) > 21) {
                     playerHandBusted[h] = true;
-                    currentBankroll -= playerHandWagers[h];
+                    currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
                 }
                 continue;
             }
@@ -407,7 +416,7 @@ public class GameEngine {
             // Flag bust conditions
             if (calculateHandValue(playerHands[h], playerHandCardCounts[h]) > 21) {
                 playerHandBusted[h] = true;
-                currentBankroll -= playerHandWagers[h];
+                currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
             }
         }
 
@@ -450,7 +459,7 @@ public class GameEngine {
                 currentBankroll += playerHandWagers[h];
                 totalRoundPnL += playerHandWagers[h];
             } else if (pTotal < dealerTotal) {
-                currentBankroll -= playerHandWagers[h];
+                currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
                 totalRoundPnL -= playerHandWagers[h];
             }
             // Pushes add 0.0 to PnL
@@ -687,7 +696,7 @@ public class GameEngine {
             currentBankroll += payout;
             return payout;
         } else if (!playerBJ && dealerBJ) {
-            currentBankroll -= wager;
+            currentBankroll = Math.max(0, currentBankroll - wager);
             return -wager;
         }
         return 0; // Push
