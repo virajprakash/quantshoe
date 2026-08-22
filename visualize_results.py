@@ -24,7 +24,7 @@ def dollar_formatter(x, pos):
 # Simulation starting conditions
 num_decks = 6
 hands_per_run = 100_000
-betting_mode = 'Fixed Spread (1-12) 2 Hand at TC2+'
+betting_mode = 'Fixed Spread (1-12) 1 Hand Only'
 table_min = 25
 table_max = 3000
 

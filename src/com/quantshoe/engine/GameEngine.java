@@ -248,6 +248,7 @@ public class GameEngine {
     private final boolean[] playerHandBusted = new boolean[4];
     private final boolean[] playerHandSurrendered = new boolean[4];
     private final boolean[] playerHandFromSplitAces = new boolean[4];
+    private final boolean[] playerHandNaturalBJ = new boolean[4];
 
     private final int[] dealerHand = new int[21];
     private int dealerCardCount;
@@ -323,21 +324,46 @@ public class GameEngine {
         }
 
         // Check for immediate natural Blackjacks
-        boolean playerInitialBJ = (calculateHandValue(playerHands[0], playerHandCardCounts[0]) == 21);
         boolean dealerBJ = (dealerTotal == 21);
-        if (playerInitialBJ || dealerBJ) {
-            return resolveNaturalBlackjacks(playerInitialBJ, dealerBJ, baselineWager);
+        if (dealerBJ) {
+            // Dealer has natural — resolve all hands against it
+            double totalPnL = 0;
+            for (int i = 0; i < numHands; i++) {
+                boolean playerBJ = (calculateHandValue(playerHands[i], playerHandCardCounts[i]) == 21);
+                totalPnL += resolveNaturalBlackjacks(playerBJ, true, playerHandWagers[i]);
+            }
+            return totalPnL;
+        }
+        // No dealer BJ — mark any hands with natural BJ for 3:2 payout in settlement
+        boolean allPlayerBJ = true;
+        for (int i = 0; i < numHands; i++) {
+            if (calculateHandValue(playerHands[i], playerHandCardCounts[i]) == 21) {
+                playerHandNaturalBJ[i] = true;
+            } else {
+                allPlayerBJ = false;
+            }
+        }
+        if (allPlayerBJ) {
+            double totalPnL = 0;
+            for (int i = 0; i < numHands; i++) {
+                totalPnL += resolveNaturalBlackjacks(true, false, playerHandWagers[i]);
+            }
+            return totalPnL;
         }
 
-        // 2. Surrender check (initial 2-card hand only)
-        if (allowLateSurrender && evaluateSurrenderMatrix(playerHands[0], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
-            playerHandSurrendered[0] = true;
-            currentBankroll = Math.max(0, currentBankroll - (baselineWager * 0.5));
-            return -(baselineWager * 0.5);
+        // 2. Surrender check (each initial hand independently, skip hands with natural BJ)
+        for (int i = 0; i < numHands; i++) {
+            if (!playerHandNaturalBJ[i] && allowLateSurrender
+                    && evaluateSurrenderMatrix(playerHands[i], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
+                playerHandSurrendered[i] = true;
+                currentBankroll = Math.max(0, currentBankroll - (playerHandWagers[i] * 0.5));
+            }
         }
 
         // 3. Splitting and play loop
         for (int h = 0; h < activePlayerHandsCount; h++) {
+            // Skip hands already resolved (surrendered or natural BJ)
+            if (playerHandSurrendered[h] || playerHandNaturalBJ[h]) continue;
 
             // Check for recursive split triggers (e.g., pairs) up to a max table limit of 4 hands
             while (activePlayerHandsCount < 4 && playerHandCardCounts[h] == 2 && playerHands[h][0] == playerHands[h][1]
@@ -455,6 +481,13 @@ public class GameEngine {
             }
 
             int pTotal = calculateHandValue(playerHands[h], playerHandCardCounts[h]);
+            // Natural BJ pays 3:2 (only possible on non-split initial hands)
+            if (playerHandNaturalBJ[h]) {
+                double payout = playerHandWagers[h] * 1.5;
+                currentBankroll += payout;
+                totalRoundPnL += payout;
+                continue;
+            }
             if (dealerTotal > 21 || pTotal > dealerTotal) {
                 currentBankroll += playerHandWagers[h];
                 totalRoundPnL += playerHandWagers[h];
@@ -709,6 +742,7 @@ public class GameEngine {
             this.playerHandBusted[i] = false;
             this.playerHandSurrendered[i] = false;
             this.playerHandFromSplitAces[i] = false;
+            this.playerHandNaturalBJ[i] = false;
             this.playerHandWagers[i] = 0.0;
         }
     }
