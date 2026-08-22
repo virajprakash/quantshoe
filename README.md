@@ -15,7 +15,7 @@ A high-performance blackjack simulation engine written in Java. It can run billi
 * **Count-based playing deviations:** Overrides basic strategy in real time based on the true count, including surrender index plays (e.g., surrender 16 vs 9 above −1, stand 15 vs 10 above +4).
 * **Two betting modes:**
   * **Half-Kelly Criterion** — (Experimental) sizes wagers from estimated edge and current bankroll to balance growth against drawdown risk.
-  * **Fixed spread (CVCX-matched)** — ramps bets from table minimum to maximum on a 1-2-6-10-12 unit schedule keyed to the true count.
+  * **Fixed spread (Recommended)** — ramps bets on a 100% configurable unit schedule keyed to the true count.
 * **Multi-hand play:** At high true counts the fixed spread engine automatically spreads to two hands to increase hourly EV.
 * **Configurable rule sets:** Supports H17/S17 dealer rules, late surrender, resplit aces, and adjustable deck penetration.
 * **Thread-parallel simulation:** Uses a fixed-size `ExecutorService` thread pool to distribute simulation runs across all available CPU cores.
