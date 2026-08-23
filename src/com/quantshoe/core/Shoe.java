@@ -87,13 +87,13 @@ public final class Shoe {
         // dealt and subtracting) avoids a Jensen's inequality bias where coarser estimation
         // systematically inflates TC due to the convexity of 1/x. This matches CVCX/BJA Pro
         // behavior: finer estimation → more accurate TC → better-correlated decisions → higher EV.
-        double estimatedDecksRemaining = Math.ceil(exactDecksRemaining / unit) * unit;
+        double estimatedDecksRemaining =  Math.round(exactDecksRemaining / unit) * unit;
 
         // Clamp minimum to the rounding unit so that coarser estimation (e.g., full-deck)
         // cannot round down to zero and produce artificially extreme TC spikes via the floor.
         // A player estimating in full decks would never say "zero decks remain" — they'd say "one deck".
-        double minDecks = Math.max(unit, 0.5);
-        return this.runningCount / Math.max(estimatedDecksRemaining, minDecks);
+        estimatedDecksRemaining = Math.max(estimatedDecksRemaining, 0.5);
+        return (this.runningCount / estimatedDecksRemaining);
     }
 
     // High-utility diagnostic getters
