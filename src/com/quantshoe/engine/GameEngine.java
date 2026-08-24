@@ -91,7 +91,7 @@ public class GameEngine {
         HARD_MATRIX[16][10] = StrategyAction.SURRENDER_16_VS_10_RUNNING_COUNT;
         HARD_MATRIX[12][2] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
         HARD_MATRIX[12][3] = StrategyAction.DEVIATE_STAND_IF_ABOVE;
-
+        HARD_MATRIX[12][4]= StrategyAction.DEVIATE_STAND_IF_RUNNING_ABOVE_ZERO;
         // Illustrious 18 deviations: Double on hard totals when count is high
         HARD_MATRIX[10][10] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
         HARD_MATRIX[10][11] = StrategyAction.DEVIATE_DOUBLE_IF_ABOVE;
@@ -300,6 +300,7 @@ public class GameEngine {
         int activePlayerHandsCount = numHands;
         for (int i = 0; i < numHands; i++) {
             playerHandWagers[i] = baselineWager;
+            currentBankroll -= baselineWager; // Reserve wager upfront
             // Deal initial cards
             playerHands[i][playerHandCardCounts[i]++] = shoe.dealCard().getValue();
             playerHands[i][playerHandCardCounts[i]++] = shoe.dealCard().getValue();
@@ -311,15 +312,15 @@ public class GameEngine {
         int dealerTotal = calculateHandValue(dealerHand, dealerCardCount);
 
         // 1. Insurance check (dealer shows Ace)
-        if (dealerUpcard == 11 && currentBankroll >= (baselineWager * 1.5)) {
+        if (dealerUpcard == 11 && currentBankroll >= (baselineWager * 0.5)) {
             boolean takeInsurance = evaluateInsuranceMatrix(shoe.getTrueCount());
             if (takeInsurance) {
                 double insuranceBet = baselineWager * 0.5;
+                currentBankroll -= insuranceBet; // Reserve insurance bet upfront
                 if (dealerTotal == 21) {
-                    currentBankroll += (insuranceBet * 2.0); // Insurance pays 2:1
-                } else {
-                    currentBankroll = Math.max(0, currentBankroll - insuranceBet);
+                    currentBankroll += (insuranceBet * 3.0); // Return stake + 2:1 payout
                 }
+                // If dealer doesn't have BJ, insurance bet is already lost (reserved above)
             }
         }
 
@@ -330,7 +331,13 @@ public class GameEngine {
             double totalPnL = 0;
             for (int i = 0; i < numHands; i++) {
                 boolean playerBJ = (calculateHandValue(playerHands[i], playerHandCardCounts[i]) == 21);
-                totalPnL += resolveNaturalBlackjacks(playerBJ, true, playerHandWagers[i]);
+                double result = resolveNaturalBlackjacks(playerBJ, true, playerHandWagers[i]);
+                totalPnL += result;
+                // Wager already reserved; return wager on push (both BJ), nothing on loss
+                if (playerBJ) {
+                    currentBankroll += playerHandWagers[i]; // Push — return reserved wager
+                }
+                // If player doesn't have BJ, wager is lost (already reserved)
             }
             return totalPnL;
         }
@@ -346,7 +353,9 @@ public class GameEngine {
         if (allPlayerBJ) {
             double totalPnL = 0;
             for (int i = 0; i < numHands; i++) {
-                totalPnL += resolveNaturalBlackjacks(true, false, playerHandWagers[i]);
+                double payout = playerHandWagers[i] * 1.5;
+                currentBankroll += playerHandWagers[i] + payout; // Return wager + 3:2 payout
+                totalPnL += payout;
             }
             return totalPnL;
         }
@@ -356,7 +365,7 @@ public class GameEngine {
             if (!playerHandNaturalBJ[i] && allowLateSurrender
                     && evaluateSurrenderMatrix(playerHands[i], dealerUpcard, shoe.getTrueCount(), shoe.getRunningCount())) {
                 playerHandSurrendered[i] = true;
-                currentBankroll = Math.max(0, currentBankroll - (playerHandWagers[i] * 0.5));
+                currentBankroll += (playerHandWagers[i] * 0.5); // Return half the reserved wager
             }
         }
 
@@ -378,6 +387,7 @@ public class GameEngine {
                     playerHands[newHandIdx][0] = playerHands[h][1]; // Move 2nd card to new hand
                     playerHandCardCounts[newHandIdx] = 1;
                     playerHandWagers[newHandIdx] = playerHandWagers[h];
+                    currentBankroll -= playerHandWagers[newHandIdx]; // Reserve wager for split hand
 
                     // Reset original hand to 1 card
                     playerHandCardCounts[h] = 1;
@@ -402,7 +412,7 @@ public class GameEngine {
             if (playerHandFromSplitAces[h]) {
                 if (calculateHandValue(playerHands[h], playerHandCardCounts[h]) > 21) {
                     playerHandBusted[h] = true;
-                    currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
+                    // Wager already reserved — no further deduction needed
                 }
                 continue;
             }
@@ -419,6 +429,7 @@ public class GameEngine {
                 switch (decision) {
                     case DOUBLE:
                         if (playerHandCardCounts[h] == 2 && currentBankroll >= playerHandWagers[h]) {
+                            currentBankroll -= playerHandWagers[h]; // Reserve additional wager for double
                             playerHandWagers[h] *= 2.0;
                             playerHands[h][playerHandCardCounts[h]++] = shoe.dealCard().getValue();
                             handActive = false; // Only one card on a double
@@ -442,7 +453,7 @@ public class GameEngine {
             // Flag bust conditions
             if (calculateHandValue(playerHands[h], playerHandCardCounts[h]) > 21) {
                 playerHandBusted[h] = true;
-                currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
+                // Wager already reserved — no further deduction needed
             }
         }
 
@@ -468,34 +479,36 @@ public class GameEngine {
             }
         }
 
-        // 5. Settle all hands
+        // 5. Settle all hands (wagers already reserved from bankroll)
         double totalRoundPnL = 0.0;
         for (int h = 0; h < activePlayerHandsCount; h++) {
             if (playerHandSurrendered[h]) {
                 totalRoundPnL -= (playerHandWagers[h] * 0.5);
-                continue;
+                continue; // Half already returned at surrender time
             }
             if (playerHandBusted[h]) {
                 totalRoundPnL -= playerHandWagers[h];
-                continue;
+                continue; // Wager already lost (reserved)
             }
 
             int pTotal = calculateHandValue(playerHands[h], playerHandCardCounts[h]);
             // Natural BJ pays 3:2 (only possible on non-split initial hands)
             if (playerHandNaturalBJ[h]) {
                 double payout = playerHandWagers[h] * 1.5;
-                currentBankroll += payout;
+                currentBankroll += playerHandWagers[h] + payout; // Return wager + 3:2 payout
                 totalRoundPnL += payout;
                 continue;
             }
             if (dealerTotal > 21 || pTotal > dealerTotal) {
-                currentBankroll += playerHandWagers[h];
+                currentBankroll += playerHandWagers[h] * 2.0; // Return wager + 1:1 payout
                 totalRoundPnL += playerHandWagers[h];
             } else if (pTotal < dealerTotal) {
-                currentBankroll = Math.max(0, currentBankroll - playerHandWagers[h]);
+                // Wager already reserved — lost
                 totalRoundPnL -= playerHandWagers[h];
+            } else {
+                // Push — return reserved wager
+                currentBankroll += playerHandWagers[h];
             }
-            // Pushes add 0.0 to PnL
         }
 
         return totalRoundPnL;
@@ -624,7 +637,8 @@ public class GameEngine {
 
             case DEVIATE_STAND_IF_BELOW:
                 return (trueCount <= threshold) ? Decision.STAND : Decision.HIT;
-
+            case DEVIATE_STAND_IF_RUNNING_ABOVE_ZERO:
+                return (shoe.getRunningCount() >= 0) ? Decision.STAND : Decision.HIT;
             case DEVIATE_DOUBLE_IF_ABOVE:
                 if (count == 2) {
                     return (trueCount >= threshold) ? Decision.DOUBLE : Decision.HIT;
@@ -723,16 +737,17 @@ public class GameEngine {
         return aceCount > 0;
     }
 
+    /**
+     * Resolves natural blackjack outcomes. Returns PnL only; bankroll adjustments
+     * are handled by the caller since wagers are reserved upfront.
+     */
     private double resolveNaturalBlackjacks(boolean playerBJ, boolean dealerBJ, double wager) {
         if (playerBJ && !dealerBJ) {
-            double payout = wager * 1.5;
-            currentBankroll += payout;
-            return payout;
+            return wager * 1.5; // 3:2 payout (caller handles bankroll)
         } else if (!playerBJ && dealerBJ) {
-            currentBankroll = Math.max(0, currentBankroll - wager);
-            return -wager;
+            return -wager; // Loss (wager already reserved by caller)
         }
-        return 0; // Push
+        return 0; // Push (caller handles bankroll)
     }
 
     private void resetRoundState() {

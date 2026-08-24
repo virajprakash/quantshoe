@@ -9,6 +9,7 @@ public final class Shoe {
     private final Random random;
 
     private int topCardIndex;
+
     private int runningCount;
 
     public Shoe(int totalDecks) {
@@ -99,6 +100,9 @@ public final class Shoe {
     // High-utility diagnostic getters
     public int getRunningCount() {
         return this.runningCount;
+    }
+    public void setRunningCount(int runningCount) {
+        this.runningCount = runningCount;
     }
 
     public int getCardsRemaining() {

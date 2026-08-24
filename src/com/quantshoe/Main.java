@@ -33,7 +33,7 @@ public final class Main {
 
         String gameMode = "H17";
         String bettingMode = "fixed";
-        String deckEstimationMode = "quarter";
+        String deckEstimationMode = "full";
         String rampStr = "1,2,6,10,12";
         int rampStart = 1;
         String outputFilePath = "quant_blackjack_results.csv";
