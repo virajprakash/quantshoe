@@ -15,17 +15,19 @@ public final class SimulationWorker implements Callable<SimulationResult> {
     private final double deckPenetration;
     private boolean lateSurrenderAllowed = true;
     private boolean resplitAcesAllowed = false;
+    private boolean blackjackPays3to2 = true;
     private final GameEngine engine;
     private final BettingStrategy bettingEngine;
 
-    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy) {
-        this(handsToSimulate, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy,
+    public SimulationWorker(int handsToSimulate, int totalDecks, boolean blackjackPays3to2, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy) {
+        this(handsToSimulate, totalDecks, blackjackPays3to2, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy,
                 new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed));
     }
 
-    public SimulationWorker(int handsToSimulate, int totalDecks, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy, GameEngine engine) {
+    public SimulationWorker(int handsToSimulate, int totalDecks, boolean blackjackPays3to2, double startingBankroll, double tableMin, double tableMax, double deckPenetration, boolean lateSurrenderAllowed, boolean resplitAcesAllowed, BettingStrategy bettingStrategy, GameEngine engine) {
         this.handsToSimulate = handsToSimulate;
         this.totalDecks = totalDecks;
+        this.blackjackPays3to2 = blackjackPays3to2;
         this.startingBankroll = startingBankroll;
         this.tableMin = tableMin;
         this.tableMax = tableMax;

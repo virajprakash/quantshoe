@@ -255,27 +255,31 @@ public class GameEngine {
     private double currentBankroll;
     private final boolean allowLateSurrender;
     private final boolean allowResplitAces;
+    private final boolean blackjackPays3to2;
+    private double blackjackPayout;
     protected final boolean dealerHitsSoft17;
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, true, DeckEstimation.FULL);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, true, true, DeckEstimation.FULL);
     }
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true, DeckEstimation.FULL);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true, true, DeckEstimation.FULL);
     }
 
     public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, dealerHitsSoft17, DeckEstimation.FULL);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, dealerHitsSoft17, true, DeckEstimation.FULL);
     }
 
-    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17, DeckEstimation deckEstimation) {
+    public GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean dealerHitsSoft17, boolean blackjackPays3to2, DeckEstimation deckEstimation) {
         this.shoe = new Shoe(totalDecks, deckEstimation);
         this.currentBankroll = startingBankroll;
         this.tableMinBet = tableMinBet;
         this.tableMaxBet = tableMaxBet;
         this.allowLateSurrender = allowLateSurrender;
         this.allowResplitAces = allowResplitAces;
+        this.blackjackPays3to2 = blackjackPays3to2;
+        this.blackjackPayout = blackjackPays3to2 ? 1.5 : 1.2;
         this.dealerHitsSoft17 = dealerHitsSoft17;
     }
 
@@ -353,7 +357,7 @@ public class GameEngine {
         if (allPlayerBJ) {
             double totalPnL = 0;
             for (int i = 0; i < numHands; i++) {
-                double payout = playerHandWagers[i] * 1.5;
+                double payout = playerHandWagers[i] * blackjackPayout;
                 currentBankroll += playerHandWagers[i] + payout; // Return wager + 3:2 payout
                 totalPnL += payout;
             }
@@ -494,7 +498,7 @@ public class GameEngine {
             int pTotal = calculateHandValue(playerHands[h], playerHandCardCounts[h]);
             // Natural BJ pays 3:2 (only possible on non-split initial hands)
             if (playerHandNaturalBJ[h]) {
-                double payout = playerHandWagers[h] * 1.5;
+                double payout = playerHandWagers[h] * blackjackPayout;
                 currentBankroll += playerHandWagers[h] + payout; // Return wager + 3:2 payout
                 totalRoundPnL += payout;
                 continue;
@@ -743,7 +747,7 @@ public class GameEngine {
      */
     private double resolveNaturalBlackjacks(boolean playerBJ, boolean dealerBJ, double wager) {
         if (playerBJ && !dealerBJ) {
-            return wager * 1.5; // 3:2 payout (caller handles bankroll)
+            return wager * blackjackPayout; // 3:2 payout (caller handles bankroll)
         } else if (!playerBJ && dealerBJ) {
             return -wager; // Loss (wager already reserved by caller)
         }

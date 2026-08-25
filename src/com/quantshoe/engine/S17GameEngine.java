@@ -214,14 +214,14 @@ public final class S17GameEngine extends GameEngine {
     }
 
     public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet) {
-        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, false, DeckEstimation.FULL);
+        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, true, true, false, true, DeckEstimation.FULL);
     }
 
     public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces) {
-        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, DeckEstimation.FULL);
+        this(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, true, DeckEstimation.FULL);
     }
 
-    public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, DeckEstimation deckEstimation) {
-        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, false, deckEstimation);
+    public S17GameEngine(int totalDecks, double startingBankroll, double tableMinBet, double tableMaxBet, boolean allowLateSurrender, boolean allowResplitAces, boolean blackjackPays3to2,  DeckEstimation deckEstimation) {
+        super(totalDecks, startingBankroll, tableMinBet, tableMaxBet, allowLateSurrender, allowResplitAces, false, blackjackPays3to2, deckEstimation);
     }
 }

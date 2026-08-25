@@ -30,6 +30,7 @@ public final class Main {
 
         boolean lateSurrenderAllowed = true;
         boolean resplitAcesAllowed = false;
+        boolean blackjackPays3to2 = true;
 
         String gameMode = "H17";
         String bettingMode = "fixed";
@@ -80,6 +81,9 @@ public final class Main {
                 case "--resplitAces":
                     resplitAcesAllowed = Boolean.parseBoolean(args[++i]);
                     break;
+                case "--blackjackPays3to2":
+                    blackjackPays3to2 = Boolean.parseBoolean(args[++i]);
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println("Usage: java com.quantshoe.Main [options]");
@@ -96,6 +100,8 @@ public final class Main {
                     System.err.println("  --rampStart <int>          True count where the ramp begins (default: 1)");
                     System.err.println("  --lateSurrender <true|false> Allow late surrender (default: true)");
                     System.err.println("  --resplitAces <true|false>  Allow resplitting aces (default: false)");
+                    System.err.println("  --blackjackPays3to2 <true|false>  false = 6 to 5 (default: true)");
+
                     System.exit(1);
             }
         }
@@ -155,11 +161,11 @@ public final class Main {
         for (int i = 0; i < simulationRuns; i++) {
             GameEngine engine;
             if (gameMode.equalsIgnoreCase("s17")) {
-                engine = new S17GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, deckEstimation);
+                engine = new S17GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, blackjackPays3to2, deckEstimation);
             } else {
-                engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, true, deckEstimation);
+                engine = new GameEngine(totalDecks, startingBankroll, tableMin, tableMax, lateSurrenderAllowed, resplitAcesAllowed, true, blackjackPays3to2, deckEstimation);
             }
-            tasks.add(new SimulationWorker(handsPerRun, totalDecks, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy, engine));
+            tasks.add(new SimulationWorker(handsPerRun, totalDecks, blackjackPays3to2, startingBankroll, tableMin, tableMax, deckPenetration, lateSurrenderAllowed, resplitAcesAllowed, bettingStrategy, engine));
         }
 
         System.out.println("Executing " + simulationRuns + " parallel tests ("
